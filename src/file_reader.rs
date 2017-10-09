@@ -45,7 +45,7 @@ impl FileReader {
 		let chs: Vec<char> = self.curr_line.chars().collect();
 		let ch = chs[self.pointer as usize];
 
-		if (ch == '\n') {
+		if (self.pointer == (self.curr_line.len() - 1) as i32) {
 			self.pointer = 0;
 			self.curr_line.clear();
 
