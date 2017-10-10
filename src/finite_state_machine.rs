@@ -20,7 +20,7 @@ impl FSMachine {
 	}
 
 	pub fn step(&mut self, ch: char) -> String {
-		if (ch == '\n' || ch == '\t' || ch == ' ') {
+		if (ch == '\n' || ch == '\t' || ch == ' ' || ch == '\r') {
 			self.state = "start".to_string();
 			return "end".to_string()
 		}

@@ -1,0 +1,6 @@
+var 
+  _a_ real
+begin 
+  _a_  $0000000000
+  print _a_
+end.

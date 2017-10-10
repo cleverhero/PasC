@@ -1,3 +1,17 @@
-,0,1-9,a-d f-w y-z A-Z,e,x, ,_
-start,none,int,none,none,none,none,none
-int,int,int,none,none,none,none,none
+,0,1-9,g-w y-z G-Z,a-d f-f A-D F-F,e,E,x, ,_,.,$,-,+,:,;,=,(,),[,]
+start,int,int,id,id,id,id,id,end,id,point,hex,minus,plus,colon,semicolon,eq,op,cp,obr,cbr
+id,id,id,id,id,id,id,id,end,id,end,end,end,end,end,end,end,end,end,end,end
+int,int,int,end,end,none,none,none,end,none,end,none,end,end,end,end,end,end,end,end,end
+hex,hex,hex,none,hex,hex,hex,none,end,end,end,end,end,end,end,end,end,end,end,end,end
+minus,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+plus,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+point,end,end,end,end,end,end,end,end,end,range,end,end,end,end,end,end,end,end,end,end
+range,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+colon,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,assign,end,end,end,end
+semicolon,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+eq,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+assign,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+op,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+cp,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+obr,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
+cbr,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end,end
