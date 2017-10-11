@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate lazy_static;
 use std::env;
+use std::i32;
+use std::str::FromStr;
 
 mod csv_parser;
 mod file_reader;

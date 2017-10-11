@@ -95,7 +95,7 @@ pub struct Token {
 impl Token {
 	pub fn new(machine_state: String, text: String, coords: Point) -> Token {
 		let mut token_type_str = machine_state.clone();
-
+        let mut value = text.clone();
 		if (token_type_str == "id") {
 			for i in key_words {
 				if (i.to_string() == text) {
@@ -103,10 +103,28 @@ impl Token {
 				}
 			}
 		}
+
+        if (token_type_str == "string") {
+            value = text[1..text.len() - 1].to_string();
+        }
+        if (token_type_str == "int") {
+            value = i32::from_str(&text).unwrap().to_string();
+        }
+        if (token_type_str == "hex") {
+            let hstr = &(text[2..text.len()].to_string());
+            println!("{}", hstr);
+            value = i32::from_str_radix(&hstr, 16).unwrap().to_string();
+        }
+        if (token_type_str == "double") {
+            value = f32::from_str(&text).unwrap().to_string();
+        }
+        if (token_type_str == "exp") {
+            value = f32::from_str(&text).unwrap().to_string();
+        }
 		Token {
 			token_type:     (*type_by_state.get(&machine_state).unwrap()).clone(),
 			token_type_str: token_type_str,
-			value:          text.clone(),
+			value:          value,
 			text:           text,
 			coords:         coords,
 		}
