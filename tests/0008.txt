@@ -1,5 +1,5 @@
 var 
-  _a_: array [10001.13123..100.3241324] of integer;
+  _a_: array [100..-svsdfv] of integer;
 begin 
 132.23443
   _a_ := $0000000000;

@@ -17,19 +17,26 @@ impl Parser {
     	
     	let mut line = String::new();
     	reader.read_line(&mut line).unwrap();
-    	let cols: Vec<&str> = line.trim().split(",").collect();
+    	let cols: Vec<&str> = line.trim().split("#").collect();
 	
 		let mut len = 1;
-    	while (len != 0) {
+    	'gl: while (len != 0) {
     		let mut row = String::new();
     		len = reader.read_line(&mut row).unwrap();
-    		let mut new_state: Vec<String> = vec!["None".to_string(); 255];
-	
-    		let cells: Vec<&str> = row.trim().split(",").collect();
+    		let mut new_state: Vec<String> = vec!["none".to_string(); 255];
+
+
+    		let cells: Vec<&str> = row.trim().split("#").collect();
     		for i in (1 .. cells.len()) {
-    			let range = cols[i];
-	
+    			let mut range = cols[i];
+	            if (cells[0] == "literal") {
+                    let mut new_state = vec!["literal".to_string(); 255];
+                    new_state["'".as_bytes()[0] as usize] = "string".to_string();
+                    t_table.insert(cells[0].to_string(), new_state);
+                    continue 'gl;
+                }
     			if (range.len() == 1) {
+                    if (range == "\\") { range = "/"; }
     				new_state[range.as_bytes()[0] as usize] = cells[i].to_string();
     			}
     			else {

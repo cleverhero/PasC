@@ -1,0 +1,25 @@
+function ConditionP(const CashFlows: array of Double): Integer;
+  var
+    X: Double;
+    I, K: Integer;
+  begin
+    K := High(CashFlows);
+    while (K >= 0) and (CashFlows[K] >= 0.0) do Dec(K);
+    Inc(K);
+    if K > 0 then
+    begin
+      X := 0.0;
+      I := 0;
+      while I < K do
+      begin
+        X := X + CashFlows[I];
+        if X >= 0.0 then
+        begin
+          K := 0;
+          Break;
+        end;
+        Inc(I)
+      end
+    end;
+    ConditionP := K
+  end;
