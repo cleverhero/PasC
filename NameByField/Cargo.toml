@@ -1,0 +1,11 @@
+[package]
+name = "NameByField"
+version = "0.1.0"
+authors = ["Oleg Prikhodko <oldmpr@rambler.ru>"]
+
+[dependencies]
+quote = "0.3"
+syn = "0.11"
+
+[lib]
+proc-macro = true
