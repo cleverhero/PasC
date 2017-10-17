@@ -23,7 +23,7 @@ impl Parser {
     	'gl: while (len != 0) {
     		let mut row = String::new();
     		len = reader.read_line(&mut row).unwrap();
-    		let mut new_state: Vec<String> = vec!["none".to_string(); 255];
+    		let mut new_state: Vec<String> = vec!["end".to_string(); 255];
 
 
     		let cells: Vec<&str> = row.trim().split("#").collect();

@@ -36,7 +36,8 @@ impl FileReader {
 
 	pub fn next_char(&mut self) -> FatChar {
 		if (self.buffer.len() != 0) {
-			return FatChar::Char{ch: self.buffer.pop().unwrap()}
+			let ch = self.buffer.pop().unwrap();
+			return FatChar::Char{ ch }
 		}
 		if (self.curr_line.len() == 0) {
 			return FatChar::Eof;

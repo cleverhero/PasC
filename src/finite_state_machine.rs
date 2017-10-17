@@ -3,7 +3,7 @@ use csv_parser::Parser;
 
 
 pub struct FSMachine {
-	pub state: String,
+	state: String,
 	
 	t_table: HashMap<String, Vec<String>>,
 }
@@ -27,6 +27,7 @@ impl FSMachine {
 		let mut ind: u8 = 0;
 		unsafe { ind = ch as u8; }
 		let new_state = self.t_table.get(&self.state).unwrap()[ind as usize].clone();
+
 		if (new_state != "end") {
 			self.state = new_state.clone();
 		}
@@ -34,5 +35,9 @@ impl FSMachine {
 			self.state = "start".to_string();
 		}
 		new_state
+	}
+
+	pub fn init(&mut self) {
+		self.state = "start".to_string();
 	}
 }
