@@ -4,9 +4,9 @@ use std::io::BufReader;
 use std::f64;
 use std::i64;
 use std::str::FromStr;
-use file_reader::FileReader;
-use file_reader::FatChar;
-use finite_state_machine::FSMachine;
+use TokenizerPack::file_reader::FileReader;
+use TokenizerPack::file_reader::FatChar;
+use TokenizerPack::finite_state_machine::FSMachine;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -27,8 +27,13 @@ pub enum TokenType {
 	t_ge, 	     t_le,
 	t_gt, 	     t_lt,
 	t_eq,        t_ne,
-     
+
     t_exp,       t_keyword,
+     
+    t_dog,       t_lid,
+    t_octal,     t_grill,
+    t_char,      t_hex_char,
+    t_octal_char,
 }
 
 lazy_static! {
@@ -66,9 +71,18 @@ lazy_static! {
 
         m.insert("exp".to_string(),        TokenType::t_exp);
         m.insert("key_word".to_string(),   TokenType::t_keyword);
+
+        m.insert("octal".to_string(),      TokenType::t_octal);
+        m.insert("lid".to_string(),        TokenType::t_lid);
+        m.insert("dog".to_string(),        TokenType::t_dog);
+        m.insert("grill".to_string(),      TokenType::t_grill);
+        m.insert("char".to_string(),       TokenType::t_char);
+        m.insert("hex_char".to_string(),   TokenType::t_hex_char);
+        m.insert("octal_char".to_string(), TokenType::t_octal_char);
         m
     };
 }
+
 
 pub static key_words: &'static [&'static str] = &["and", "array", "begin", 
                                         "case", "const", "div", "do", 
@@ -117,9 +131,19 @@ impl Token {
             }
         }
         if (token_type_str == "hex") {
-            let hstr = &(text[2..text.len()].to_string());
+            let hstr = &(text[1..text.len()].to_string());
 
             match i64::from_str_radix(&hstr, 16) {
+                Ok(x) => {
+                    value = x.to_string();
+                },
+                Err(e) => panic!("{} -> {}", text, e),
+            }
+        }
+        if (token_type_str == "octal") {
+            let hstr = &(text[1..text.len()].to_string());
+
+            match i64::from_str_radix(&hstr, 8) {
                 Ok(x) => {
                     value = x.to_string();
                 },
@@ -131,6 +155,63 @@ impl Token {
         }
         if (token_type_str == "exp") {
             value = f64::from_str(&text).unwrap().to_string();
+        }
+        if (token_type_str == "char") {
+            let hstr = &(text[1..text.len()].to_string());
+            let mut i = 0;
+            match i64::from_str(&hstr) {
+                Ok(x) => {
+                    i = x;
+                },
+                Err(e) => panic!("{} -> {}", text, e),
+            }
+
+            if (i <= 127 || i >= 0) {
+                unsafe {
+                    value = ((i as u8) as char).to_string();
+                }
+            }
+            else {
+                panic!("Error char");
+            }
+        }
+        if (token_type_str == "hex_char") {
+            let hstr = &(text[2..text.len()].to_string());
+            let mut i = 0;
+            match i64::from_str_radix(&hstr, 16) {
+                Ok(x) => {
+                    i = x;
+                },
+                Err(e) => panic!("{} -> {}", text, e),
+            }
+
+            if (i <= 127 || i >= 0) {
+                unsafe {
+                    value = ((i as u8) as char).to_string();
+                }
+            }
+            else {
+                panic!("Error char");
+            }
+        } 
+        if (token_type_str == "octal_char") {
+            let hstr = &(text[2..text.len()].to_string());
+            let mut i = 0;
+            match i64::from_str_radix(&hstr, 8) {
+                Ok(x) => {
+                    i = x;
+                },
+                Err(e) => panic!("{} -> {}", text, e),
+            }
+
+            if (i <= 127 || i >= 0) {
+                unsafe {
+                    value = ((i as u8) as char).to_string();
+                }
+            }
+            else {
+                panic!("Error char");
+            }
         }
 		Token {
 			token_type:     (*type_by_state.get(&token_type_str).unwrap()).clone(),

@@ -17,7 +17,7 @@ impl Parser {
     	
     	let mut line = String::new();
     	reader.read_line(&mut line).unwrap();
-    	let cols: Vec<&str> = line.trim().split("#").collect();
+    	let cols: Vec<&str> = line.trim().split("|").collect();
 	
 		let mut len = 1;
     	'gl: while (len != 0) {
@@ -26,7 +26,7 @@ impl Parser {
     		let mut new_state: Vec<String> = vec!["end".to_string(); 255];
 
 
-    		let cells: Vec<&str> = row.trim().split("#").collect();
+    		let cells: Vec<&str> = row.trim().split("|").collect();
     		for i in (1 .. cells.len()) {
     			let mut range = cols[i];
 	            if (cells[0] == "literal") {

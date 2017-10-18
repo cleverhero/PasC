@@ -10,17 +10,30 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::prelude::*;
 
-mod csv_parser;
-mod file_reader;
-mod tokenizer;
-mod finite_state_machine;
-mod support;
+mod TokenizerPack;
+mod ParserPack;
 
-use tokenizer::Tokenizer;
 
+use TokenizerPack::tokenizer::Tokenizer;
+use ParserPack::nodes::Tree;
+use ParserPack::nodes::IntNode;
+use ParserPack::nodes::BinNode;
 
 fn main() {
+	// let tree = Tree{root: Box::new( BinNode {
+	// 	left:  Box::new( BinNode {
+	// 		left:  Box::new( IntNode { value: 11 } ),
+	// 		right: Box::new( IntNode { value: 22 } ),
+	// 		op:    "*".to_string(),
+ //    	}),
+	// 	right: Box::new(  IntNode { value: 33 } ),
+	// 	op:    "*".to_string(),
+ //    } )};
+	// println!("{}", tree);
+
+
 	let mut tokenizer_mode = false;
+	let mut parser_mode = false;
 	let mut infile_mode = false;
 	let mut file = "".to_string();
 	if env::args().len() == 1 {
@@ -41,8 +54,12 @@ fn main() {
 			infile_mode = true;
 		}
 
-		if (arg == "-l") {
+		if (arg == "-l" && !parser_mode) {
 			tokenizer_mode = true;
+		}
+
+		if (arg == "-p" && !tokenizer_mode) {
+			parser_mode = true;
 		}
 	}
 	
@@ -80,5 +97,9 @@ fn main() {
    				}
 			}
 		}
+    }
+
+    if (parser_mode) {
+    	let mut tokenizer = Tokenizer::new(file.clone());
     }
 }

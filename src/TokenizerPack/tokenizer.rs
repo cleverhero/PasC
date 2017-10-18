@@ -4,12 +4,12 @@ use std::io::BufReader;
 use std::f32;
 use std::i32;
 use std::str::FromStr;
-use file_reader::FileReader;
-use file_reader::FatChar;
-use finite_state_machine::FSMachine;
+use TokenizerPack::file_reader::FileReader;
+use TokenizerPack::file_reader::FatChar;
+use TokenizerPack::finite_state_machine::FSMachine;
 use std::collections::HashMap;
 use std::fmt;
-use support::*;
+use TokenizerPack::support::*;
 
 pub struct Tokenizer {
 	machine: FSMachine,
@@ -129,20 +129,12 @@ impl Tokenizer {
 						self.reader.push_back(ch);
 						let new_token = Token::new(token_type_str, text, token_coords);
 
-						text = "".to_string();
-						token_type_str = "".to_string();
-						token_coords = self.pointer.clone();
-
 						return Ok(new_token);
 					}
 				}, 
 				FatChar::Eof => { 
 					if (text != "") {
 						let new_token = Token::new(token_type_str, text, token_coords);
-
-						text = "".to_string();
-						token_type_str = "".to_string();
-						token_coords = self.pointer.clone();
 
 						return Ok(new_token);
 					}
