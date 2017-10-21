@@ -1,0 +1,10 @@
+	Line   Col    Type            Value                     Text                     
+	1      1      TId             vars                      vars                     
+	2      1      TKeyword        begin                     begin                    
+	3      1      TId             code                      code                     
+	4      1      TId             code                      code                     
+	5      1      TId             code                      code                     
+	14     1      TId             code                      code                     
+	14     6      TId             code                      code                     
+	15     1      TKeyword        end                       end                      
+	15     4      TPoint          .                         .                        

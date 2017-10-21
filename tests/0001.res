@@ -1,0 +1,9 @@
+	Line   Col    Type            Value                     Text                     
+	1      1      TInt            0                         0                        
+	2      1      TInt            12                        12                       
+	3      1      TInt            2341                      2341                     
+	4      1      TInt            13243                     0013243                  
+	5      1      TInt            413413                    413413                   
+	5      8      TInt            4124                      4124                     
+	5      13     TInt            3                         3                        
+	5      15     TInt            4                         4                        

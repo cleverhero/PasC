@@ -1,90 +1,89 @@
-use std::fs::File;
 use std::io::prelude::*;
-use std::io::BufReader;
 use std::f64;
 use std::i64;
 use std::str::FromStr;
-use TokenizerPack::file_reader::FileReader;
-use TokenizerPack::file_reader::FatChar;
-use TokenizerPack::finite_state_machine::FSMachine;
 use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Clone, name_by_field)]
 pub enum TokenType {
-	t_int,	     t_double,
-	t_hex, 	     t_minus,
-	t_plus,      t_id,
-	t_point,     t_colom,
-	t_semicolom, t_comma, 
-	t_assign,    t_range,  
-    t_mul,       t_share,  
-    t_literal,   t_string,
+	TInt,	     TDouble,
+    THex, 	     TMinus,
+	TPlus,       TId,
+	TPoint,      TColom,
+	TSemicolom,  TComma, 
+	TAssign,     TRange,  
+    TMul,        TShare,  
+    TLiteral,    TString,
 
-	t_op, 	     t_cp,
-	t_obr, 	     t_cbr,
+	TOp, 	     TCp,
+	TObr, 	     TCbr,
      
-	t_ge, 	     t_le,
-	t_gt, 	     t_lt,
-	t_eq,        t_ne,
+	TGe, 	     TLe,
+	TGt, 	     TLt,
+	TEq,         TNe,
 
-    t_exp,       t_keyword,
+    TExp,        TKeyword,
      
-    t_dog,       t_lid,
-    t_octal,     t_grill,
-    t_char,      t_hex_char,
-    t_octal_char,
+    TDog,        TLid,
+    TOctal,      TGrill,
+    TChar,       THexChar,
+    TOctalChar,
+    TBin,        TBinChar,
 }
 
 lazy_static! {
-    pub static ref type_by_state: HashMap<String, TokenType> = {
+    pub static ref TYPE_BY_STATE: HashMap<String, TokenType> = {
     	let mut m = HashMap::new();
-        m.insert("int".to_string(),        TokenType::t_int);
-        m.insert("double".to_string(),     TokenType::t_double);
-        m.insert("hex".to_string(),        TokenType::t_hex);
-        m.insert("minus".to_string(),      TokenType::t_minus);
-        m.insert("plus".to_string(),       TokenType::t_plus);
-        m.insert("id".to_string(),         TokenType::t_id);
-        m.insert("point".to_string(),      TokenType::t_point);
-        m.insert("colon".to_string(),      TokenType::t_colom);
-        m.insert("semicolon".to_string(),  TokenType::t_semicolom);
-        m.insert("eq".to_string(),         TokenType::t_eq);
-        m.insert("assign".to_string(),     TokenType::t_assign);
-        m.insert("comma".to_string(),      TokenType::t_comma);
-        m.insert("range".to_string(),      TokenType::t_range);
-        m.insert("mul".to_string(),        TokenType::t_mul);
-        m.insert("share".to_string(),      TokenType::t_share);
-        m.insert("literal".to_string(),    TokenType::t_literal);
-        m.insert("string".to_string(),     TokenType::t_string);
+        m.insert("int".to_string(),        TokenType::TInt);
+        m.insert("double".to_string(),     TokenType::TDouble);
+        m.insert("hex".to_string(),        TokenType::THex);
+        m.insert("bin".to_string(),        TokenType::TBin);
+        m.insert("minus".to_string(),      TokenType::TMinus);
+        m.insert("plus".to_string(),       TokenType::TPlus);
+        m.insert("id".to_string(),         TokenType::TId);
+        m.insert("point".to_string(),      TokenType::TPoint);
+        m.insert("colon".to_string(),      TokenType::TColom);
+        m.insert("semicolon".to_string(),  TokenType::TSemicolom);
+        m.insert("eq".to_string(),         TokenType::TEq);
+        m.insert("assign".to_string(),     TokenType::TAssign);
+        m.insert("comma".to_string(),      TokenType::TComma);
+        m.insert("range".to_string(),      TokenType::TRange);
+        m.insert("mul".to_string(),        TokenType::TMul);
+        m.insert("share".to_string(),      TokenType::TShare);
+        m.insert("literal".to_string(),    TokenType::TLiteral);
+        m.insert("string".to_string(),     TokenType::TString);
 
-        m.insert("op".to_string(),         TokenType::t_op);
-        m.insert("cp".to_string(),         TokenType::t_cp);
-        m.insert("obr".to_string(),        TokenType::t_obr);
-        m.insert("cbr".to_string(),        TokenType::t_cbr);
+        m.insert("op".to_string(),         TokenType::TOp);
+        m.insert("cp".to_string(),         TokenType::TCp);
+        m.insert("obr".to_string(),        TokenType::TObr);
+        m.insert("cbr".to_string(),        TokenType::TCbr);
 
-        m.insert("ge".to_string(),         TokenType::t_ge);
-        m.insert("gt".to_string(),         TokenType::t_gt);
-        m.insert("eq".to_string(),         TokenType::t_eq);
-        m.insert("le".to_string(),         TokenType::t_le);
-        m.insert("lt".to_string(),         TokenType::t_lt);
-        m.insert("ne".to_string(),         TokenType::t_ne);
+        m.insert("ge".to_string(),         TokenType::TGe);
+        m.insert("gt".to_string(),         TokenType::TGt);
+        m.insert("eq".to_string(),         TokenType::TEq);
+        m.insert("le".to_string(),         TokenType::TLe);
+        m.insert("lt".to_string(),         TokenType::TLt);
+        m.insert("ne".to_string(),         TokenType::TNe);
 
-        m.insert("exp".to_string(),        TokenType::t_exp);
-        m.insert("key_word".to_string(),   TokenType::t_keyword);
+        m.insert("exp".to_string(),        TokenType::TExp);
+        m.insert("key_word".to_string(),   TokenType::TKeyword);
 
-        m.insert("octal".to_string(),      TokenType::t_octal);
-        m.insert("lid".to_string(),        TokenType::t_lid);
-        m.insert("dog".to_string(),        TokenType::t_dog);
-        m.insert("grill".to_string(),      TokenType::t_grill);
-        m.insert("char".to_string(),       TokenType::t_char);
-        m.insert("hex_char".to_string(),   TokenType::t_hex_char);
-        m.insert("octal_char".to_string(), TokenType::t_octal_char);
+        m.insert("octal".to_string(),      TokenType::TOctal);
+        m.insert("lid".to_string(),        TokenType::TLid);
+        m.insert("dog".to_string(),        TokenType::TDog);
+        m.insert("grill".to_string(),      TokenType::TGrill);
+        m.insert("char".to_string(),       TokenType::TChar);
+        m.insert("hex_char".to_string(),   TokenType::THexChar);
+        m.insert("octal_char".to_string(), TokenType::TOctalChar);
+        m.insert("bin_char".to_string(),   TokenType::TBinChar);
+        
         m
     };
 }
 
 
-pub static key_words: &'static [&'static str] = &["and", "array", "begin", 
+pub static KEY_WORDS: &'static [&'static str] = &["and", "array", "begin", 
                                         "case", "const", "div", "do", 
                                         "downto", "else", "end", "file", 
                                         "for", "function", "goto", "if", 
@@ -107,118 +106,161 @@ pub struct Token {
 }
 
 impl Token {
-	pub fn new(machine_state: String, text: String, coords: Point) -> Token {
+	pub fn new(machine_state: String, text: String, coords: Point) -> Result<Token, String> {
 		let mut token_type_str = machine_state;
         let mut value = text.clone();
-		if (token_type_str == "id") {
-			for i in key_words {
-				if (i.to_string() == text) {
+		if token_type_str == "id" {
+			for i in KEY_WORDS {
+				if i.to_string() == text {
 					token_type_str = "key_word".to_string();
                     break;
 				}
 			}
 		}
 
-        if (token_type_str == "string") {
+        if token_type_str == "string" {
             value = text[1..text.len() - 1].to_string();
         }
-        if (token_type_str == "int") {
+        if token_type_str == "int" {
             match i64::from_str(&text) {
                 Ok(x) => {
                     value = x.to_string();
                 },
-                Err(e) => panic!("{} -> {}", text, e),
+                Err(e) => return Err(format!("{} => Error in format of Integer", e)),
             }
         }
-        if (token_type_str == "hex") {
+        if token_type_str == "hex" {
             let hstr = &(text[1..text.len()].to_string());
 
             match i64::from_str_radix(&hstr, 16) {
                 Ok(x) => {
                     value = x.to_string();
                 },
-                Err(e) => panic!("{} -> {}", text, e),
+                Err(e) => return Err(format!("{} => Error in format of Hex", e)),
             }
         }
-        if (token_type_str == "octal") {
+        if token_type_str == "bin" {
+            let hstr = &(text[1..text.len()].to_string());
+
+            match i64::from_str_radix(&hstr, 2) {
+                Ok(x) => {
+                    value = x.to_string();
+                },
+                Err(e) => return Err(format!("{} => Error in format of Bin", e)),
+            }
+        }
+        if token_type_str == "octal" {
             let hstr = &(text[1..text.len()].to_string());
 
             match i64::from_str_radix(&hstr, 8) {
                 Ok(x) => {
                     value = x.to_string();
                 },
-                Err(e) => panic!("{} -> {}", text, e),
+                Err(e) => return  Err(format!("{} => Error in format of Octal", e)),
             }
         }
-        if (token_type_str == "double") {
-            value = f64::from_str(&text).unwrap().to_string();
+        if token_type_str == "double" {
+            match f64::from_str(&text) {
+                Ok(x) => {
+                    value = x.to_string();
+                },
+                Err(e) => return  Err(format!("{} => Error in format of Double", e)),
+            }
         }
-        if (token_type_str == "exp") {
-            value = f64::from_str(&text).unwrap().to_string();
+        if token_type_str == "exp" {
+            match f64::from_str(&text) {
+                Ok(x) => {
+                    value = x.to_string();
+                },
+                Err(e) => return  Err(format!("{} => Error in format of Exp", e)),
+            }
         }
-        if (token_type_str == "char") {
+        if token_type_str == "char" {
             let hstr = &(text[1..text.len()].to_string());
             let mut i = 0;
-            match i64::from_str(&hstr) {
+
+            match i64::from_str(&text){
                 Ok(x) => {
                     i = x;
                 },
-                Err(e) => panic!("{} -> {}", text, e),
+                Err(e) => return Err(format!("{} => Error in format of Integer", e)),
             }
 
-            if (i <= 127 || i >= 0) {
+            if i <= 127 && i >= 0 {
                 unsafe {
                     value = ((i as u8) as char).to_string();
                 }
             }
             else {
-                panic!("Error char");
+                return Err(format!("Unknown character code {}", text[1..text.len()].to_string()));
             }
         }
-        if (token_type_str == "hex_char") {
+        if token_type_str == "hex_char" {
+            token_type_str = "char".to_string();
             let hstr = &(text[2..text.len()].to_string());
             let mut i = 0;
             match i64::from_str_radix(&hstr, 16) {
                 Ok(x) => {
                     i = x;
                 },
-                Err(e) => panic!("{} -> {}", text, e),
+                Err(e) => return Err(format!("{} => Error in format of Hex", e)),
             }
 
-            if (i <= 127 || i >= 0) {
+            if i <= 127 && i >= 0 {
                 unsafe {
                     value = ((i as u8) as char).to_string();
                 }
             }
             else {
-                panic!("Error char");
+                return Err(format!("Unknown character code {}", text[1..text.len()].to_string()));
             }
         } 
-        if (token_type_str == "octal_char") {
+
+        if token_type_str == "bin_char" {
+            token_type_str = "char".to_string();
+            let hstr = &(text[2..text.len()].to_string());
+            let mut i = 0;
+            match i64::from_str_radix(&hstr, 2) {
+                Ok(x) => {
+                    i = x;
+                },
+                Err(e) => return Err(format_args!("{} => Error in format of Bin", e).to_string()),
+            }
+
+            if i <= 127 && i >= 0 {
+                unsafe {
+                    value = ((i as u8) as char).to_string();
+                }
+            }
+            else {
+                return Err(format_args!("Unknown character code {}", text[1..text.len()].to_string()).to_string());
+            }
+        } 
+
+        if token_type_str == "octal_char" {
+            token_type_str = "char".to_string();
             let hstr = &(text[2..text.len()].to_string());
             let mut i = 0;
             match i64::from_str_radix(&hstr, 8) {
                 Ok(x) => {
                     i = x;
                 },
-                Err(e) => panic!("{} -> {}", text, e),
+                Err(e) => return Err(format_args!("{} => Error in format of Bin", e).to_string()),
             }
 
-            if (i <= 127 || i >= 0) {
-                unsafe {
-                    value = ((i as u8) as char).to_string();
-                }
+            if i <= 127 && i >= 0 {
+                value = ((i as u8) as char).to_string();
             }
             else {
-                panic!("Error char");
+                return Err(format_args!("Unknown character code {}", text[1..text.len()].to_string()).to_string());
             }
         }
-		Token {
-			token_type:     (*type_by_state.get(&token_type_str).unwrap()).clone(),
+		Ok(Token {
+			token_type:     (*TYPE_BY_STATE.get(&token_type_str).unwrap()).clone(),
 			value:          value,
 			text:           text,
 			coords:         coords,
-		}
+		})
 	}
 }
 

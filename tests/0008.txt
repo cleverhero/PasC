@@ -1,7 +1,6 @@
-var 
-  _a_: array [100..-svsdfv] of integer;
-begin 
-132.23443
-  _a_ := $0000000000;
-  print(_a_);
-end.
+1..100
+-100..+100
+.......
+abx..vfd
+a..b
+#51..#59

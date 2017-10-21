@@ -1,0 +1,11 @@
+	Line   Col    Type            Value                     Text                     
+	1      1      TMinus          -                         -                        
+	1      2      TInt            1                         1                        
+	2      1      TMinus          -                         -                        
+	2      2      TInt            2324                      2324                     
+	3      1      TMinus          -                         -                        
+	3      2      TDouble         1                         1.0                      
+	4      1      TMinus          -                         -                        
+	4      2      TDouble         132.0324                  132.0324                 
+	5      1      TMinus          -                         -                        
+	5      3      TMinus          -                         -                        

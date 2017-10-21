@@ -1,6 +1,8 @@
 var 
-  _a_: real;
-begin 
-  _a_ := $0000000000;
-  print(_a_);
+	b: integer;
+    _a_: real;
+begin
+	b = 100;
+    _a_:=$0000000000;
+    print(_a_);
 end.

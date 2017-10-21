@@ -20,18 +20,6 @@ use ParserPack::nodes::IntNode;
 use ParserPack::nodes::BinNode;
 
 fn main() {
-	// let tree = Tree{root: Box::new( BinNode {
-	// 	left:  Box::new( BinNode {
-	// 		left:  Box::new( IntNode { value: 11 } ),
-	// 		right: Box::new( IntNode { value: 22 } ),
-	// 		op:    "*".to_string(),
- //    	}),
-	// 	right: Box::new(  IntNode { value: 33 } ),
-	// 	op:    "*".to_string(),
- //    } )};
-	// println!("{}", tree);
-
-
 	let mut tokenizer_mode = false;
 	let mut parser_mode = false;
 	let mut infile_mode = false;
@@ -66,7 +54,7 @@ fn main() {
 	if (tokenizer_mode) {
     	let mut tokenizer = Tokenizer::new(file.clone());
 	
-		let mstr = "tests/results/".to_string() + &(file);
+		let mstr = file[0..file.len() - 4].to_string() + ".res";
 
 		if (infile_mode) {
 			let mut file = File::create(mstr).unwrap();
@@ -74,10 +62,10 @@ fn main() {
     		for res in tokenizer {
    				match res {
    					Ok(token) => {
-   						file.write_fmt(format_args!("{}", token));
+   						file.write_fmt(format_args!("{}\n", token));
    					}
    					Err(msg) => {
-   						file.write_fmt(format_args!("{}", msg));
+   						file.write_fmt(format_args!("{}\n", msg));
    						break;
    					}
    				}
