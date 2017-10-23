@@ -4,10 +4,7 @@ extern crate lazy_static;
 extern crate NameByField;
 
 use std::env;
-use std::i32;
-use std::str::FromStr;
 use std::fs::File;
-use std::io::BufWriter;
 use std::io::prelude::*;
 
 mod TokenizerPack;
@@ -15,9 +12,7 @@ mod ParserPack;
 
 
 use TokenizerPack::tokenizer::Tokenizer;
-use ParserPack::nodes::Tree;
-use ParserPack::nodes::IntNode;
-use ParserPack::nodes::BinNode;
+use ParserPack::parser::Parser;
 
 fn main() {
 	let mut tokenizer_mode = false;
@@ -29,34 +24,35 @@ fn main() {
 	}
 
 	for arg in env::args() {
-		if (arg[0..1].to_string() != "-") {
+		if arg[0..1].to_string() != "-" {
 			file = arg.to_string();
 		}
-		if (arg == "-h") {
+		if arg == "-h" {
 			println!("Приходько Олег. 2017 год.");
 			println!("-h -> help");
 			println!("-l file -> run tokenizer in file");
 			return;
 		}
-		if (arg == "-f") {
+		if arg == "-f" {
 			infile_mode = true;
 		}
 
-		if (arg == "-l" && !parser_mode) {
+		if arg == "-l" && !parser_mode {
 			tokenizer_mode = true;
 		}
 
-		if (arg == "-p" && !tokenizer_mode) {
+		if arg == "-p" && !tokenizer_mode {
 			parser_mode = true;
 		}
 	}
+
 	
-	if (tokenizer_mode) {
-    	let mut tokenizer = Tokenizer::new(file.clone());
-	
+
+	if tokenizer_mode {
+		let mut tokenizer = Tokenizer::new(file.clone());
 		let mstr = file[0..file.len() - 4].to_string() + ".res";
 
-		if (infile_mode) {
+		if infile_mode {
 			let mut file = File::create(mstr).unwrap();
     		file.write_fmt(format_args!("\t{:6} {:6} {:15} {:25} {:25}\n", "Line", "Col", "Type", "Value", "Text"));
     		for res in tokenizer {
@@ -86,8 +82,18 @@ fn main() {
 			}
 		}
     }
-
-    if (parser_mode) {
+    else if parser_mode {
     	let mut tokenizer = Tokenizer::new(file.clone());
+    	let mut parser = Parser::new(tokenizer);
+    	let tree = parser.parse();
+    	let mstr = file[0..file.len() - 4].to_string() + ".res";
+
+    	if infile_mode {
+			let mut file = File::create(mstr).unwrap();
+    		file.write_fmt(format_args!("{}", tree));
+		} 
+		else {
+    		println!("{}", tree);
+		}
     }
 }

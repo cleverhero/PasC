@@ -7,10 +7,10 @@ use std::fmt;
 
 #[derive(Clone, name_by_field)]
 pub enum TokenType {
-	TInt,	     TDouble,
+	TColom,	     TDouble,
     THex, 	     TMinus,
 	TPlus,       TId,
-	TPoint,      TColom,
+	TPoint,      TInt,
 	TSemicolom,  TComma, 
 	TAssign,     TRange,  
     TMul,        TShare,  
@@ -98,7 +98,7 @@ pub struct Point { pub x: i32, pub y: i32 }
 
 #[derive(Clone)]
 pub struct Token {
-	token_type: TokenType,
+	pub token_type: TokenType,
 
 	pub value: String,
 	pub text: String,
@@ -106,6 +106,16 @@ pub struct Token {
 }
 
 impl Token {
+    pub fn default() -> Token {
+        Token {
+            token_type: TokenType::TId,
+
+            value: "0".to_string(),
+            text: "0".to_string(),
+            coords: Point { x:0, y: 0},
+        }
+    }
+
 	pub fn new(machine_state: String, text: String, coords: Point) -> Result<Token, String> {
 		let mut token_type_str = machine_state;
         let mut value = text.clone();
@@ -117,6 +127,7 @@ impl Token {
 				}
 			}
 		}
+        
 
         if token_type_str == "string" {
             value = text[1..text.len() - 1].to_string();

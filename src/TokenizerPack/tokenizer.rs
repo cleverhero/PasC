@@ -13,6 +13,7 @@ pub struct Tokenizer {
 	depth_comment: i32,
 
 	reader: FileReader,
+	pub current: Token,
 }
 
 pub enum ErrorState {
@@ -34,6 +35,7 @@ impl Tokenizer {
 			depth_comment: 0,
 
 			reader: reader,
+			current: Token::default(),
 		}
 	}
 
@@ -163,6 +165,7 @@ impl Iterator for Tokenizer {
     	loop {
         	match self.next_token() {
 				Ok(token) => {
+					self.current = token.clone();
 					return Some(Ok(token));
 				},
 				Err(error) => match error {

@@ -1,9 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::f32;
-use std::i32;
-use std::str::FromStr;
 use std::collections::HashMap;
 
 pub struct Parser;
@@ -20,7 +17,7 @@ impl Parser {
     	let cols: Vec<&str> = line.trim().split("|").collect();
 	
 		let mut len = 1;
-    	'gl: while (len != 0) {
+    	'gl: while len != 0 {
     		let mut row = String::new();
     		len = reader.read_line(&mut row).unwrap();
     		let mut new_state: Vec<String> = vec!["end".to_string(); 255];
@@ -29,14 +26,14 @@ impl Parser {
     		let cells: Vec<&str> = row.trim().split("|").collect();
     		for i in (1 .. cells.len()) {
     			let mut range = cols[i];
-	            if (cells[0] == "literal") {
+	            if cells[0] == "literal" {
                     let mut new_state = vec!["literal".to_string(); 255];
                     new_state["'".as_bytes()[0] as usize] = "string".to_string();
                     t_table.insert(cells[0].to_string(), new_state);
                     continue 'gl;
                 }
-    			if (range.len() == 1) {
-                    if (range == "\\") { range = "/"; }
+    			if range.len() == 1 {
+                    if range == "\\" { range = "/"; }
     				new_state[range.as_bytes()[0] as usize] = cells[i].to_string();
     			}
     			else {
