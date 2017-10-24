@@ -170,7 +170,16 @@ impl Iterator for Tokenizer {
 				},
 				Err(error) => match error {
 					ErrorState::Critical{msg} => { return Some(Err(msg)); },
-					ErrorState::EndOfFile => { return None },
+					ErrorState::EndOfFile => { 
+						self.current = Token {
+							token_type:     TokenType::TEof,
+							value:          "".to_string(),
+							text:           "".to_string(),
+							coords:         Point {x: 0, y: 0},
+						};
+
+						return None; 
+					},
 					ErrorState::EmptyToken => {},
 				}
 			}

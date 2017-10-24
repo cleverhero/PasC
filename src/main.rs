@@ -83,13 +83,26 @@ fn main() {
 		}
     }
     else if parser_mode {
-    	let mut tokenizer = Tokenizer::new(file.clone());
+    	let tokenizer = Tokenizer::new(file.clone());
     	let mut parser = Parser::new(tokenizer);
-    	let tree = parser.parse();
-    	let mstr = file[0..file.len() - 4].to_string() + ".res";
 
+		let mstr = file[0..file.len() - 4].to_string() + ".res";
+    	let mut file = File::create(mstr).unwrap();
+
+    	let tree = match parser.parse() {
+    		Ok(val) => val,
+    		Err(msg) => {
+    			if infile_mode {
+    				file.write_fmt(format_args!("{}", msg));
+    			}
+    			else {
+    				println!("{}", msg);
+    			}
+    			return;
+    		}
+    	};
+    	
     	if infile_mode {
-			let mut file = File::create(mstr).unwrap();
     		file.write_fmt(format_args!("{}", tree));
 		} 
 		else {

@@ -30,6 +30,7 @@ pub enum TokenType {
     TChar,       THexChar,
     TOctalChar,
     TBin,        TBinChar,
+    TEof,
 }
 
 lazy_static! {
@@ -77,7 +78,7 @@ lazy_static! {
         m.insert("hex_char".to_string(),   TokenType::THexChar);
         m.insert("octal_char".to_string(), TokenType::TOctalChar);
         m.insert("bin_char".to_string(),   TokenType::TBinChar);
-        
+
         m
     };
 }

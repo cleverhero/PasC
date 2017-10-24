@@ -16,76 +16,121 @@ impl Parser {
 		}
 	} 
 
-	pub fn parse(&mut self) -> Tree {
-		let e = Box::new(ConstNode::new(0));
-		let mut t = match self.tokenizer.next() {
+	pub fn parse(&mut self) -> Result<Tree, String> {
+		match self.tokenizer.next() {
     		Some(res) => match res {
     			Ok(token) => token,
-   				Err(msg) => { return Tree::new(e); }
+   				Err(msg) => { return Err(msg); }
    			}
-   			None => { return Tree::new(e); }
+   			None => { return Err(String::from("Error: Not found tokens")); }
     	};
 
-		Tree::new(self.parseExpr())
+    	match self.parse_expr() {
+    		Ok(node) => return Ok(Tree::new(node)),
+    		Err(msg) => return Err(msg)
+    	}
+		
 	} 
 
-	fn parseExpr(&mut self) -> Box<Node> {
-		let mut e = self.parseTerm();
+	fn parse_expr(&mut self) -> Result<Box<Node>, String> {
+		let mut e = match self.parse_term() {
+    		Ok(val) => val,
+    		Err(msg) => return Err(msg)
+    	};
     	let mut t = self.tokenizer.current.clone();
 
     	while match t.token_type {
     		TokenType::TPlus | TokenType::TMinus => true,
     		_ => false
     	} {
-    		self.tokenizer.next();
-    		let right = self.parseTerm();
+    		match self.tokenizer.next() {
+    			Some(res) => match res {
+    				Ok(_token) => {},
+   					Err(msg) => return Err(msg)
+   				}
+   				None => { }
+    		};
+    		let right = match self.parse_term() {
+    			Ok(val) => val,
+    			Err(msg) => return Err(msg)
+    		};
     	    e = Box::new(BinNode::new(e, right, t));
     	    t = self.tokenizer.current.clone();
     	}
 
-		e
+		Ok(e)
 	}
 
-	fn parseTerm(&mut self) -> Box<Node> {
-		let mut e = self.parseFactor();
+	fn parse_term(&mut self) -> Result<Box<Node>, String> {
+		let mut e = match self.parse_factor() {
+    		Ok(val) => val,
+    		Err(msg) => return Err(msg)
+    	};
     	let mut t = self.tokenizer.current.clone();
 
     	while match t.token_type {
     		TokenType::TMul | TokenType::TShare => true,
     		_ => false
     	} {
-    		self.tokenizer.next();
-    		let right = self.parseFactor();
+    		match self.tokenizer.next() {
+    			Some(res) => match res {
+    				Ok(_token) => {},
+   					Err(msg) => return Err(msg)
+   				}
+   				None => { }
+    		};
+    		let right = match self.parse_factor() {
+    			Ok(val) => val,
+    			Err(msg) => return Err(msg)
+    		};
     	    e = Box::new(BinNode::new(e, right, t));
     	    t = self.tokenizer.current.clone();
     	}
 
-		return e;
+		Ok(e)
 	}
 
-	fn parseFactor(&mut self) -> Box<Node> {
-		let mut t = self.tokenizer.current.clone();
-		self.tokenizer.next();
+	fn parse_factor(&mut self) -> Result<Box<Node>, String> {
+		let t = self.tokenizer.current.clone();
+		match self.tokenizer.next() {
+    		Some(res) => match res {
+    			Ok(_token) => {},
+   				Err(msg) => return Err(msg)
+   			}
+   			None => { }
+    	};
     	match t.token_type {
     		TokenType::TDouble => {
     			let value = f64::from_str(&t.value).unwrap();
-    			return Box::new(ConstNode::new(value))
+    			return Ok(Box::new(ConstNode::new(value)))
     		},
     		TokenType::TInt => {
     			let value = i64::from_str(&t.value).unwrap();
-    			return Box::new(ConstNode::new(value))
+    			return Ok(Box::new(ConstNode::new(value)))
     		},
     		TokenType::TId => {
-    			return Box::new(IdNode::new(t.value))
+    			return Ok(Box::new(IdNode::new(t.value)))
     		},
     		TokenType::TOp => {
-           		let e = self.parseExpr();
-            	self.tokenizer.next();
+           		let e = self.parse_expr();
+
+            	let t = self.tokenizer.current.clone();
+            	match t.token_type {
+            		TokenType::TCp => {},
+            		_ => return Err(String::from("Error: Missing closing bracket"))
+            	}
+
+            	match self.tokenizer.next() {
+    				Some(res) => match res {
+    					Ok(_token) => {},
+   						Err(msg) => return Err(msg)
+   					}
+   					None => { }
+    			};
+
 				return e;
 			} 
-    		_ => return Box::new(ConstNode::new(0))
+    		_ => return Err(String::from("Error: Missing operand"))
     	}
-
-    	//return Box::new(ConstNode::new(0));
 	}
 }
