@@ -128,9 +128,9 @@ impl Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Value::Int{ref v} => write!(f, "{}", v.clone()),
-            &Value::Double{ref v} => write!(f, "{}", v.clone()),
-            &Value::Str{ref v} => write!(f, "{}", v.clone()),
+            &Value::Int{ref v} => write!(f, "{:<25}", v.clone()),
+            &Value::Double{ref v} => write!(f, "{:<25}", v.clone()),
+            &Value::Str{ref v} => write!(f, "{:<25}", v.clone()),
         }
     }
 }

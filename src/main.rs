@@ -3,17 +3,58 @@ extern crate lazy_static;
 #[macro_use]
 extern crate NameByField;
 
+mod TokenizerPack;
+mod ParserPack;
+mod support;
+
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
-
-mod TokenizerPack;
-mod ParserPack;
-
-
+use support::*;
 use TokenizerPack::tokenizer::Tokenizer;
 use ParserPack::parser::Parser;
 
+fn procerr_errors(err: CompilerErrors) -> String {
+    match err {
+        CompilerErrors::TokenizerError{err} => match err {
+            TokenizerErrors::ErrorInInteger{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неверный формат целого числа", x, y)
+            },
+            TokenizerErrors::ErrorInHex{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неверный формат шестнадцатеричного числа", x, y)
+            },
+            TokenizerErrors::ErrorInBin{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неверный формат двоичного числа", x, y)
+            },
+            TokenizerErrors::ErrorInOctal{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неверный формат восьмиричного числа", x, y)
+            },
+            TokenizerErrors::ErrorInDouble{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неверный формат вешественного числа", x, y)
+            },
+            TokenizerErrors::ErrorInExp{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неверный формат экспоненты", x, y)
+            },
+            TokenizerErrors::UnknownCharCode{ x, y } => { 
+                format!("Ошибка в ({}, {}): Неизвестный код символа", x, y)
+            },
+            TokenizerErrors::SimpleError{ x, y } => { 
+                format!("Ошибка в ({}, {})", x, y)
+            },
+        },
+        CompilerErrors::ParserError{err} => match err {
+            ParserErrors::EmptyFile{ x, y } => { 
+                format!("Ошибка в ({}, {}): Пустой файл", x, y)
+            },
+            ParserErrors::MissingClosingBracket{ x, y } => { 
+                format!("Ошибка в ({}, {}): Ожадался символ ')'", x, y)
+            },
+            ParserErrors::MissingOperand{ x, y } => { 
+                format!("Ошибка в ({}, {}): Пропущен операнд", x, y)
+            },
+        },
+    }
+}
 
 fn main() {
 	let mut tokenizer_mode = false;
@@ -21,7 +62,7 @@ fn main() {
 	let mut infile_mode = false;
 	let mut file = "".to_string();
 	if env::args().len() == 1 {
-		println!("Приходько Олег. 2017 год.");
+	println!("Приходько Олег. 2017 год.");
 	}
 
 	for arg in env::args() {
@@ -61,8 +102,9 @@ fn main() {
    					Ok(token) => {
    						file.write_fmt(format_args!("{}\n", token)).unwrap();
    					}
-   					Err(msg) => {
-   						file.write_fmt(format_args!("{}\n", msg)).unwrap();
+   					Err(err) => {
+                        let error = CompilerErrors::TokenizerError{err};
+   						file.write_fmt(format_args!("{}\n", procerr_errors(error))).unwrap();
    						break;
    					}
    				}
@@ -75,8 +117,9 @@ fn main() {
    					Ok(token) => {
    						println!("{}", token);
    					}
-   					Err(msg) => {
-   						println!("{}", msg);
+   					Err(err) => {
+                        let error = CompilerErrors::TokenizerError{err};
+   						println!("{}", procerr_errors(error));
    						break;
    					}
    				}
@@ -92,12 +135,12 @@ fn main() {
 
     	let tree = match parser.parse() {
     		Ok(val) => val,
-    		Err(msg) => {
+    		Err(err) => {
     			if infile_mode {
-    				file.write_fmt(format_args!("{}", msg)).unwrap();
+    				file.write_fmt(format_args!("{}", procerr_errors(err))).unwrap();
     			}
     			else {
-    				println!("{}", msg);
+    				println!("{}", procerr_errors(err));
     			}
     			return;
     		}

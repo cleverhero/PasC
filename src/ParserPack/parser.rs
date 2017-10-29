@@ -2,31 +2,32 @@ use ParserPack::Nodes::*;
 use ParserPack::tree::*;
 use TokenizerPack::tokenizer::Tokenizer;
 use TokenizerPack::support::*;
+use support::*;
 
 
-type NodeResult = Result<Box<Node>, String>;
-type TreeResult = Result<Tree, String>;
+type NodeResult = Result<Box<Node>, CompilerErrors>;
+type TreeResult = Result<Tree, CompilerErrors>;
 
 macro_rules! parse {
-    ($self:ident, $func:ident, [$($x: path),*]) => ({
-        let mut e = match $self.$func() {
+    ($self:ident, $next_func:ident, [$($var: path),*]) => ({
+        let mut e = match $self.$next_func() {
             Ok(val) => val,
-            Err(msg) => return Err(msg)
+            Err(err) => return Err(err)
         };
 
         let mut t = $self.tokenizer.current.clone();
         while match t.token_type {
-            $($x)|* => true,
+            $($var)|* => true,
             _ => false
         } {
             match $self.tokenizer.next() {
                 Some(res) => match res {
                     Ok(_token) => {},
-                    Err(msg) => return Err(msg)
+                    Err(err) => return Err(CompilerErrors::TokenizerError{err})
                 }
                 None => { }
             };
-            let right = match $self.$func() {
+            let right = match $self.$next_func() {
                 Ok(val) => val,
                 Err(msg) => return Err(msg)
             };
@@ -58,9 +59,12 @@ impl Parser {
         match self.tokenizer.next() {
             Some(res) => match res {
                 Ok(_token) => {},
-                Err(msg) => return Err(msg)
+                Err(err) => return Err(CompilerErrors::TokenizerError{err})
             }
-            None => { return Err(String::from("Error: Not found tokens")); }
+            None => {
+                let err = ParserErrors::EmptyFile{ x: 0, y: 0 };
+                return Err(CompilerErrors::ParserError{ err });
+            }
         };
 
         match self.parse_expr() {
@@ -82,34 +86,40 @@ impl Parser {
         match self.tokenizer.next() {
             Some(res) => match res {
                 Ok(_token) => {},
-                Err(msg) => return Err(msg)
+                Err(err) => return Err(CompilerErrors::TokenizerError{err})
             }
             None => { }
         };
         match t.token_type {
             TokenType::TDouble => { return Ok(Box::new(ConstNode::new(t.value.as_double()))) },
-            TokenType::TInt => { return Ok(Box::new(ConstNode::new(t.value.as_int()))) },
-            TokenType::TId => { return Ok(Box::new(IdNode::new(t.value.as_string()))) },
-            TokenType::TOp => {
+            TokenType::TInt    => { return Ok(Box::new(ConstNode::new(t.value.as_int()))) },
+            TokenType::TId     => { return Ok(Box::new(IdNode::new(t.value.as_string()))) },
+            TokenType::TOp     => {
                 let e = self.parse_expr();
 
                 let t = self.tokenizer.current.clone();
                 match t.token_type {
                     TokenType::TCp => {},
-                    _ => return Err(format!("Ошибка в ({}, {}): Missing closing bracket", t.coords.y, t.coords.x))
+                    _ => {
+                        let err = ParserErrors::MissingClosingBracket{ x: t.coords.clone().x, y: t.coords.clone().y };
+                        return Err(CompilerErrors::ParserError{ err });
+                    }
                 }
 
                 match self.tokenizer.next() {
                     Some(res) => match res {
                         Ok(_token) => {},
-                        Err(msg) => return Err(msg)
+                        Err(err) => return Err(CompilerErrors::TokenizerError{err})
                     }
                     None => { }
                 };
 
                 return e;
             } 
-            _ => return Err(format!("Ошибка в ({}, {}): Missing operand", t.coords.y, t.coords.x))
+            _ => {
+                let err = ParserErrors::MissingOperand{ x: t.coords.clone().x, y: t.coords.clone().y };
+                return Err(CompilerErrors::ParserError{ err });
+            }
         }
     }
 }

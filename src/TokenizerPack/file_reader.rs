@@ -19,9 +19,10 @@ pub struct FileReader {
 impl FileReader {
 	pub fn new(file_name: &str) -> FileReader {
 		let file = File::open(file_name).unwrap();
-		let reader = BufReader::new(file);
+		let mut reader = BufReader::new(file);
 
-		let line = String::new();
+		let mut line = String::new();
+		reader.read_line(&mut line).unwrap();
 
 		FileReader {
 			reader: reader,

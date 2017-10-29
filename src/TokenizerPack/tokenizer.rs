@@ -3,6 +3,7 @@ use TokenizerPack::file_reader::*;
 use TokenizerPack::finite_state_machine::FSMachine; 
 use TokenizerPack::support::*;
 use TokenizerPack::token::Token;
+use support::*;
 
 pub struct Tokenizer {
 	machine: FSMachine,
@@ -17,7 +18,7 @@ pub struct Tokenizer {
 }
 
 pub enum ErrorState {
-	Critical{msg: String},
+	Critical{err: TokenizerErrors},
 	EmptyToken,
 	EndOfFile,
 }
@@ -96,8 +97,9 @@ impl Tokenizer {
 						self.machine.init();
 						continue
 					}
+
 					if state == "none" {
-						let error = ErrorState::Critical{msg: format!("Ошибка в ({}, {})", self.pointer.y, self.pointer.x)};
+						let error = ErrorState::Critical{err: TokenizerErrors::SimpleError{ x: self.pointer.y, y: self.pointer.x}};
 						return Err(error);
 					}
 					else if state != "end" {
@@ -118,8 +120,8 @@ impl Tokenizer {
 
 									return Ok(token);
 								},
-								Err(err_msg) => {
-									let error = ErrorState::Critical{msg: format!("Ошибка в ({}, {}): {}", self.pointer.y, self.pointer.x, err_msg)};
+								Err(err) => {
+									let error = ErrorState::Critical{err};
 									return Err(error);
 								},
 							}
@@ -130,8 +132,8 @@ impl Tokenizer {
 						self.pointer = Point{ x: self.pointer.x - 1, y: self.pointer.y };
 						match Token::new(token_type_str, text, token_coords) {
 							Ok(token) => return Ok(token),
-							Err(err_msg) => {
-								let error = ErrorState::Critical{msg: format!("Ошибка в ({}, {}): {}", self.pointer.y, self.pointer.x, err_msg)};
+							Err(err) => {
+								let error = ErrorState::Critical{err};
 								return Err(error);
 							},
 						}
@@ -141,8 +143,8 @@ impl Tokenizer {
 					if text != "" {
 						match Token::new(token_type_str, text, token_coords) {
 							Ok(token) => return Ok(token),
-							Err(err_msg) => {
-								let error = ErrorState::Critical{msg: format!("Ошибка в ({}, {}): {}", self.pointer.y, self.pointer.x, err_msg)};
+							Err(err) => {
+								let error = ErrorState::Critical{err};
 								return Err(error);
 							},
 						}
@@ -159,9 +161,9 @@ impl Tokenizer {
 
 
 impl Iterator for Tokenizer {
-    type Item = Result<Token, String>;
+    type Item = Result<Token, TokenizerErrors>;
 
-    fn next(&mut self) -> Option<Result<Token, String>> {
+    fn next(&mut self) -> Option<Result<Token, TokenizerErrors>> {
     	loop {
         	match self.next_token() {
 				Ok(token) => {
@@ -169,7 +171,7 @@ impl Iterator for Tokenizer {
 					return Some(Ok(token));
 				},
 				Err(error) => match error {
-					ErrorState::Critical{msg} => { return Some(Err(msg)); },
+					ErrorState::Critical{err} => { return Some(Err(err)); },
 					ErrorState::EndOfFile => { 
 						self.current = Token {
 							token_type:     TokenType::TEof,
@@ -177,7 +179,6 @@ impl Iterator for Tokenizer {
 							text:           "".to_string(),
 							coords:         self.pointer.clone(),
 						};
-
 						return None; 
 					},
 					ErrorState::EmptyToken => {},

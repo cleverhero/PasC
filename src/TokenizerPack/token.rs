@@ -1,4 +1,5 @@
 use TokenizerPack::support::*;
+use support::*;
 use std::str::FromStr;
 use std::fmt;
 
@@ -24,7 +25,10 @@ impl Token {
         }
     }
 
-	pub fn new(machine_state: String, text: String, coords: Point) -> Result<Token, String> {
+	pub fn new(machine_state: String, text: String, coords: Point) -> Result<Token, TokenizerErrors> {
+        let x = coords.clone().x;
+        let y = coords.clone().y;
+
 		let mut token_type_str = machine_state;
         let mut value = Value::Str{ v: text.clone() };
 		if token_type_str == "id" {
@@ -45,7 +49,7 @@ impl Token {
                 Ok(x) => {
                     value = Value::Int{ v: x };
                 },
-                Err(e) => return Err(format!("{} => Error in format of Integer", e)),
+                Err(_e) => return Err(TokenizerErrors::ErrorInInteger{x, y}),
             }
         }
         if token_type_str == "hex" {
@@ -55,7 +59,7 @@ impl Token {
                 Ok(x) => {
                     value = Value::Int{ v: x };
                 },
-                Err(e) => return Err(format!("{} => Error in format of Hex", e)),
+                Err(_e) => return Err(TokenizerErrors::ErrorInHex{x, y}),
             }
         }
         if token_type_str == "bin" {
@@ -65,7 +69,7 @@ impl Token {
                 Ok(x) => {
                     value = Value::Int{ v: x };
                 },
-                Err(e) => return Err(format!("{} => Error in format of Bin", e)),
+                Err(_e) => return Err(TokenizerErrors::ErrorInBin{x, y}),
             }
         }
         if token_type_str == "octal" {
@@ -75,7 +79,7 @@ impl Token {
                 Ok(x) => {
                     value = Value::Int{ v: x };
                 },
-                Err(e) => return  Err(format!("{} => Error in format of Octal", e)),
+                Err(_e) => return  Err(TokenizerErrors::ErrorInOctal{x, y}),
             }
         }
         if token_type_str == "double" {
@@ -83,7 +87,7 @@ impl Token {
                 Ok(x) => {
                     value = Value::Double{ v: x };
                 },
-                Err(e) => return  Err(format!("{} => Error in format of Double", e)),
+                Err(_e) => return  Err(TokenizerErrors::ErrorInDouble{x, y}),
             }
         }
         if token_type_str == "exp" {
@@ -91,21 +95,21 @@ impl Token {
                 Ok(x) => {
                     value = Value::Double{ v: x };
                 },
-                Err(e) => return  Err(format!("{} => Error in format of Exp", e)),
+                Err(_e) => return  Err(TokenizerErrors::ErrorInExp{x, y}),
             }
         }
         if token_type_str == "char" {
             let hstr = &(text[1..text.len()].to_string());
             let i = match i64::from_str(&hstr) {
                 Ok(x) => { x },
-                Err(e) => return Err(format!("{} => Error in format of Integer", e)),
+                Err(_e) => return Err(TokenizerErrors::ErrorInInteger{x, y}),
             };
 
             if i <= 127 && i >= 0 {
                 value = Value::Str{ v: ((i as u8) as char).to_string() };
             }
             else {
-                return Err(format!("Unknown character code {}", text[1..text.len()].to_string()));
+                return Err(TokenizerErrors::UnknownCharCode{x, y});
             }
         }
         if token_type_str == "hex_char" {
@@ -113,14 +117,14 @@ impl Token {
             let hstr = &(text[2..text.len()].to_string());
             let i = match i64::from_str_radix(&hstr, 16) {
                 Ok(x) => { x },
-                Err(e) => return Err(format!("{} => Error in format of Hex", e)),
+                Err(_e) => return Err(TokenizerErrors::ErrorInHex{x, y}),
             };
 
             if i <= 127 && i >= 0 {
                 value = Value::Str{ v: ((i as u8) as char).to_string() };
             }
             else {
-                return Err(format!("Unknown character code {}", text[1..text.len()].to_string()));
+                return Err(TokenizerErrors::UnknownCharCode{x, y});
             }
         } 
 
@@ -129,14 +133,14 @@ impl Token {
             let hstr = &(text[2..text.len()].to_string());
             let i = match i64::from_str_radix(&hstr, 2) {
                 Ok(x) => { x },
-                Err(e) => return Err(format_args!("{} => Error in format of Bin", e).to_string()),
+                Err(_e) => return Err(TokenizerErrors::ErrorInBin{x, y}),
             };
 
             if i <= 127 && i >= 0 {
                 value = Value::Str{ v: ((i as u8) as char).to_string() };
             }
             else {
-                return Err(format_args!("Unknown character code {}", text[1..text.len()].to_string()).to_string());
+                return Err(TokenizerErrors::UnknownCharCode{x, y});
             }
         } 
 
@@ -145,14 +149,14 @@ impl Token {
             let hstr = &(text[2..text.len()].to_string());
             let i = match i64::from_str_radix(&hstr, 8) {
                 Ok(x) => { x },
-                Err(e) => return Err(format_args!("{} => Error in format of Bin", e).to_string()),
+                Err(_e) => return Err(TokenizerErrors::ErrorInOctal{x, y}),
             };
 
             if i <= 127 && i >= 0 {
                 value = Value::Str{ v: ((i as u8) as char).to_string() };
             }
             else {
-                return Err(format_args!("Unknown character code {}", text[1..text.len()].to_string()).to_string());
+                return Err(TokenizerErrors::UnknownCharCode{x, y});
             }
         }
 		Ok(Token {
@@ -166,9 +170,9 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    	write!(f, "\t{:6} {:6} {:15}{}{:25} {:25}",  self.coords.y.to_string(), 
+    	write!(f, "\t{:6} {:6} {:15} {:25} {:25}",  self.coords.y.to_string(), 
                                                     self.coords.x.to_string(), 
                                                     self.token_type.fields_name(), 
-                                                    self.value, "", self.text)
+                                                    self.value, self.text)
     }
 }
