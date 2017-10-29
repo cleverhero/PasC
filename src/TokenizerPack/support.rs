@@ -29,6 +29,18 @@ pub enum TokenType {
     TOctalChar,
     TBin,        TBinChar,
     TEof,
+    
+    TAnd, TArray, TBegin, 
+    TCase, TConst, TDiv, 
+    TDo, TDownto, TElse, 
+    TEnd, TFile, TFor, 
+    TFunction, TGoto, TIf, 
+    TIn, TLabel, TMod, TNil, 
+    TNot, TOf, TOr, TPacked, 
+    TProcedure, TProgram, TRecord, 
+    TRepeat, TSet, TThen, TTo, 
+    TType, TUntil, TVar, 
+    TWhile, TWith,
 }
 
 lazy_static! {
@@ -77,9 +89,47 @@ lazy_static! {
         m.insert("octal_char".to_string(), TokenType::TOctalChar);
         m.insert("bin_char".to_string(),   TokenType::TBinChar);
 
+        m.insert("and".to_string(),        TokenType::TAnd);
+        m.insert("array".to_string(),      TokenType::TArray);
+        m.insert("begin".to_string(),      TokenType::TBegin);
+        m.insert("case".to_string(),       TokenType::TCase);
+        m.insert("const".to_string(),      TokenType::TConst);
+        m.insert("div".to_string(),        TokenType::TDiv);
+        m.insert("do".to_string(),         TokenType::TDo);
+        m.insert("downto".to_string(),     TokenType::TDownto);
+        m.insert("else".to_string(),       TokenType::TElse);
+        m.insert("end".to_string(),        TokenType::TEnd);
+        m.insert("file".to_string(),       TokenType::TFile);
+        m.insert("for".to_string(),        TokenType::TFor);
+        m.insert("function".to_string(),   TokenType::TFunction);
+        m.insert("goto".to_string(),       TokenType::TGoto);
+        m.insert("if".to_string(),         TokenType::TIf);
+        m.insert("in".to_string(),         TokenType::TIn);
+        m.insert("label".to_string(),      TokenType::TLabel);
+        m.insert("mod".to_string(),        TokenType::TMod);
+        m.insert("nil".to_string(),        TokenType::TNil);
+        m.insert("not".to_string(),        TokenType::TNot);
+        m.insert("of".to_string(),         TokenType::TOf);
+        m.insert("or".to_string(),         TokenType::TOr);
+        m.insert("packed".to_string(),     TokenType::TPacked);
+        m.insert("procedure".to_string(),  TokenType::TProcedure);
+        m.insert("program".to_string(),    TokenType::TProgram);
+        m.insert("record".to_string(),     TokenType::TRecord);
+        m.insert("repeat".to_string(),     TokenType::TRepeat);
+        m.insert("set".to_string(),        TokenType::TSet);
+        m.insert("then".to_string(),       TokenType::TThen);
+        m.insert("to".to_string(),         TokenType::TTo);
+        m.insert("type".to_string(),       TokenType::TType);
+        m.insert("until".to_string(),      TokenType::TUntil);
+        m.insert("var".to_string(),        TokenType::TVar);
+        m.insert("while".to_string(),      TokenType::TWhile);
+        m.insert("with".to_string(),       TokenType::TWith);
+
         m
     };
 }
+
+
 
 
 pub static KEY_WORDS: &'static [&'static str] = &["and", "array", "begin", 

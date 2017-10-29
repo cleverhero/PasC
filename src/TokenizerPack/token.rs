@@ -33,8 +33,8 @@ impl Token {
         let mut value = Value::Str{ v: text.clone() };
 		if token_type_str == "id" {
 			for i in KEY_WORDS {
-				if i.to_string() == text {
-					token_type_str = "key_word".to_string();
+				if i.to_string().to_lowercase() == text {
+					token_type_str = text.clone();
                     break;
 				}
 			}
