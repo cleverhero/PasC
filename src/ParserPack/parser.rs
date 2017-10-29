@@ -42,11 +42,11 @@ impl Parser {
     }
 
     fn parse_expr(&mut self) -> NodeResult {
-        parse_bin!(self, parse_term, [TokenType::TPlus, TokenType::TMinus])
+        parse_bin!(self, parse_term, [TokenType::TPlus, TokenType::TMinus, TokenType::TOr])
     }
 
     fn parse_term(&mut self) -> NodeResult {
-        parse_bin!(self, parse_factor, [TokenType::TMul, TokenType::TShare])
+        parse_bin!(self, parse_factor, [TokenType::TMul, TokenType::TShare, TokenType::TDiv, TokenType::TMod, TokenType::TAnd])
     }
 
     fn parse_factor(&mut self) -> NodeResult {
@@ -55,7 +55,18 @@ impl Parser {
                                                       TokenType::TId     => parse_id_in_expr,
                                                       TokenType::TOp     => parse_op_in_expr,
                                                       TokenType::TPlus   => parse_tern_plus,
-                                                      TokenType::TMinus  => parse_tern_minus])
+                                                      TokenType::TMinus  => parse_tern_minus,
+                                                      TokenType::TNot    => parse_not])
+    }
+
+    fn parse_not(&mut self, t: &Token) -> NodeResult { 
+        let children = match self.parse_factor()  {
+            Ok(val) => val,
+            Err(err) => return Err(err)
+        };
+
+        let e = TernarOpNode::new(t.clone(), children);
+        Ok(Box::new(e)) 
     }
 
     fn parse_tern_plus(&mut self, t: &Token) -> NodeResult { 
