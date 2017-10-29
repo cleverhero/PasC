@@ -1,8 +1,8 @@
 use std::i32;
-use TokenizerPack::file_reader::FileReader;
-use TokenizerPack::file_reader::FatChar;
+use TokenizerPack::file_reader::*;
 use TokenizerPack::finite_state_machine::FSMachine; 
 use TokenizerPack::support::*;
+use TokenizerPack::token::Token;
 
 pub struct Tokenizer {
 	machine: FSMachine,
@@ -173,9 +173,9 @@ impl Iterator for Tokenizer {
 					ErrorState::EndOfFile => { 
 						self.current = Token {
 							token_type:     TokenType::TEof,
-							value:          "".to_string(),
+							value:          Value::Str{ v: "0".to_string() },
 							text:           "".to_string(),
-							coords:         Point {x: 0, y: 0},
+							coords:         self.pointer.clone(),
 						};
 
 						return None; 

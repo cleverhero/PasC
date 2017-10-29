@@ -14,6 +14,7 @@ mod ParserPack;
 use TokenizerPack::tokenizer::Tokenizer;
 use ParserPack::parser::Parser;
 
+
 fn main() {
 	let mut tokenizer_mode = false;
 	let mut parser_mode = false;
@@ -49,19 +50,19 @@ fn main() {
 	
 
 	if tokenizer_mode {
-		let mut tokenizer = Tokenizer::new(file.clone());
+		let tokenizer = Tokenizer::new(file.clone());
 		let mstr = file[0..file.len() - 4].to_string() + ".res";
 
 		if infile_mode {
 			let mut file = File::create(mstr).unwrap();
-    		file.write_fmt(format_args!("\t{:6} {:6} {:15} {:25} {:25}\n", "Line", "Col", "Type", "Value", "Text"));
+    		file.write_fmt(format_args!("\t{:6} {:6} {:15} {:25} {:25}\n", "Line", "Col", "Type", "Value", "Text")).unwrap();
     		for res in tokenizer {
    				match res {
    					Ok(token) => {
-   						file.write_fmt(format_args!("{}\n", token));
+   						file.write_fmt(format_args!("{}\n", token)).unwrap();
    					}
    					Err(msg) => {
-   						file.write_fmt(format_args!("{}\n", msg));
+   						file.write_fmt(format_args!("{}\n", msg)).unwrap();
    						break;
    					}
    				}
@@ -93,7 +94,7 @@ fn main() {
     		Ok(val) => val,
     		Err(msg) => {
     			if infile_mode {
-    				file.write_fmt(format_args!("{}", msg));
+    				file.write_fmt(format_args!("{}", msg)).unwrap();
     			}
     			else {
     				println!("{}", msg);
@@ -103,7 +104,7 @@ fn main() {
     	};
     	
     	if infile_mode {
-    		file.write_fmt(format_args!("{}", tree));
+    		file.write_fmt(format_args!("{}", tree)).unwrap();
 		} 
 		else {
     		println!("{}", tree);

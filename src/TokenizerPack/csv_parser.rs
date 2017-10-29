@@ -24,7 +24,7 @@ impl Parser {
 
 
     		let cells: Vec<&str> = row.trim().split("|").collect();
-    		for i in (1 .. cells.len()) {
+    		for i in 1 .. cells.len() {
     			let mut range = cols[i];
 	            if cells[0] == "literal" {
                     let mut new_state = vec!["literal".to_string(); 255];
@@ -39,7 +39,7 @@ impl Parser {
     			else {
     				let segments: Vec<&str> = range.split(" ").collect();
     				for segment in segments {
-    					for j in (segment.as_bytes()[0] as usize .. (segment.as_bytes()[2] + 1) as usize) {
+    					for j in segment.as_bytes()[0] as usize .. (segment.as_bytes()[2] + 1) as usize {
     						new_state[j] = cells[i].to_string();
     					} 
     				}
