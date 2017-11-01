@@ -15,6 +15,7 @@ pub struct Tokenizer {
 
 	reader: FileReader,
 	pub current: Token,
+	pub after:   Token,
 }
 
 pub enum ErrorState {
@@ -35,8 +36,9 @@ impl Tokenizer {
 			line_comment: false,
 			depth_comment: 0,
 
-			reader: reader,
+			reader:  reader,
 			current: Token::default(),
+			after:   Token::default(),
 		}
 	}
 
@@ -157,7 +159,36 @@ impl Tokenizer {
 
 		return Err(ErrorState::EmptyToken);
 	}
+
+	pub fn my_next(&mut self) -> Result<Token, CompilerErrors> {
+    	loop {
+        	match self.next_token() {
+				Ok(token) => {
+					self.current = self.after.clone();
+					self.after = token.clone();
+					return Ok(token);
+				},
+				Err(error) => match error {
+					ErrorState::Critical{err} => { return Err(CompilerErrors::TokenizerError{err}); },
+					ErrorState::EndOfFile => { 
+						let token = Token {
+							token_type:     TokenType::TEof,
+							value:          Value::Str{ v: "0".to_string() },
+							text:           "".to_string(),
+							coords:         self.pointer.clone(),
+						};
+
+						self.current = self.after.clone();
+						self.after = token.clone();
+						return Ok(token); 
+					},
+					ErrorState::EmptyToken => {},
+				}
+			}
+		}
+    }
 }
+
 
 
 impl Iterator for Tokenizer {
@@ -167,13 +198,15 @@ impl Iterator for Tokenizer {
     	loop {
         	match self.next_token() {
 				Ok(token) => {
-					self.current = token.clone();
+					self.current = self.after.clone();
+					self.after = token.clone();
 					return Some(Ok(token));
 				},
 				Err(error) => match error {
 					ErrorState::Critical{err} => { return Some(Err(err)); },
 					ErrorState::EndOfFile => { 
-						self.current = Token {
+						self.current = self.after.clone();
+						self.after = Token {
 							token_type:     TokenType::TEof,
 							value:          Value::Str{ v: "0".to_string() },
 							text:           "".to_string(),

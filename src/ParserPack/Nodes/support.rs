@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 pub trait Node: Printable + Display {
 	fn add_child(&mut self, new_node: Box<Node>) {}
+	fn get_value(& self) -> String { "".to_string() }
 }
 
 pub trait Printable {

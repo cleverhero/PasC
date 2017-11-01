@@ -52,6 +52,24 @@ fn procerr_errors(err: CompilerErrors) -> String {
             ParserErrors::MissingOperand{ x, y } => { 
                 format!("Ошибка в ({}, {}): Пропущен операнд", x, y)
             },
+            ParserErrors::ExpectedId{ x, y } => {
+                format!("Ошибка в ({}, {}): Ожидался идентификатор", x, y)
+            },
+            ParserErrors::ExpectedSemicolom{ x, y } => {
+                format!("Ошибка в ({}, {}): Ожадался символ ';'", x, y)
+            },
+            ParserErrors::ExpectedColon{ x, y } => {
+                format!("Ошибка в ({}, {}): Ожадался символ ':'", x, y)
+            },
+            ParserErrors::ExpectedPoint{ x, y } => {
+                format!("Ошибка в ({}, {}): Ожадался символ '.'", x, y)
+            },
+            ParserErrors::ExpectedBegin{ x, y } => {
+                format!("Ошибка в ({}, {}): Ожадался begin", x, y)
+            },
+            ParserErrors::ExpectedComma{ x, y } => {
+                format!("Ошибка в ({}, {}): Ожадался символ ','", x, y)
+            },
         },
     }
 }
@@ -127,7 +145,8 @@ fn main() {
 		}
     }
     else if parser_mode {
-    	let tokenizer = Tokenizer::new(file.clone());
+    	let mut tokenizer = Tokenizer::new(file.clone());
+        tokenizer.next();
     	let mut parser = Parser::new(tokenizer);
 
 		let mstr = file[0..file.len() - 4].to_string() + ".res";

@@ -5,7 +5,7 @@ use std::fmt;
 
 #[derive(Clone, name_by_field)]
 pub enum TokenType {
-	TColom,	     TDouble,
+	TColon,	     TDouble,
     THex, 	     TMinus,
 	TPlus,       TId,
 	TPoint,      TInt,
@@ -54,7 +54,7 @@ lazy_static! {
         m.insert("plus".to_string(),       TokenType::TPlus);
         m.insert("id".to_string(),         TokenType::TId);
         m.insert("point".to_string(),      TokenType::TPoint);
-        m.insert("colon".to_string(),      TokenType::TColom);
+        m.insert("colon".to_string(),      TokenType::TColon);
         m.insert("semicolon".to_string(),  TokenType::TSemicolom);
         m.insert("eq".to_string(),         TokenType::TEq);
         m.insert("assign".to_string(),     TokenType::TAssign);

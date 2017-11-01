@@ -26,4 +26,8 @@ impl Printable for IdNode {
 	fn get_children(&self) -> Vec<Rc<Box<Node>>> { vec![] }
 	fn get_name(&self) -> String { self.value.to_string() }
 }
-impl Node for IdNode {}
+impl Node for IdNode {
+	fn get_value(&self) -> String {
+		self.value.clone()
+	}
+}
