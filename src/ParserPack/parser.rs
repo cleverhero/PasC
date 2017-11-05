@@ -30,6 +30,7 @@ impl Parser {
 
         let child = try!( self.parse_block() );
         e.add_child(child);
+        check_token!(self, TokenType::TPoint);
         
         Ok(Box::new(e))
     }
@@ -117,7 +118,12 @@ impl Parser {
             let t = self.tokenizer.current.clone();
             break_if!(t.token_type = [TokenType::TEnd, TokenType::TEof]);
             
-            let child = match before_parse!(self, [TokenType::TId  => parse_simple_stmt]) {
+            let child = match before_parse!(self, [TokenType::TId     => parse_simple_stmt,
+                                                   TokenType::TFor    => parse_for,
+                                                   TokenType::TIf     => parse_if,
+                                                   TokenType::TWhile  => parse_while,
+                                                   TokenType::TRepeat => parse_repeat,
+                                                   TokenType::TBegin  => parse_statements]) {
                 Some(res) => try!(res),
                 None => { return Err(missing_operand(t.coords.x, t.coords.y)); }
             };
@@ -127,7 +133,6 @@ impl Parser {
         }
 
         try!(self.tokenizer.my_next());
-        check_token!(self, TokenType::TPoint);
 
         Ok(Box::new(e))
     }
@@ -149,6 +154,82 @@ impl Parser {
         e.add_child( try!(self.parse_simple_expr(&t)) );
 
         return Ok(Box::new(e));
+    }
+
+    fn parse_for(&mut self, _t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new("For".to_string());
+
+        let child = before_parse!(self, expected_token, TokenType::TId => parse_simple_id);
+        e.add_child(try!(child));
+
+        check_token!(self, TokenType::TAssign);
+
+        let child = self.parse_expr();
+        e.add_child(try!(child));
+
+        check_token!(self, TokenType::TTo);
+
+        let child = self.parse_expr();
+        e.add_child(try!(child));
+
+        check_token!(self, TokenType::TDo);
+
+        let child = before_parse!(self, expected_token, TokenType::TBegin => parse_statements);
+        e.add_child( try!(child) );
+
+        Ok(Box::new(e))
+    }
+
+    fn parse_repeat(&mut self, t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new("Repeat".to_string());
+
+        let child = before_parse!(self, expected_token, TokenType::TBegin => parse_statements);
+        e.add_child( try!(child) );
+
+        check_token!(self, TokenType::TSemicolom);
+        check_token!(self, TokenType::TUntil);
+
+        let child = self.parse_simple_expr(t);
+        e.add_child(try!(child));
+
+        Ok(Box::new(e))
+    }
+
+    fn parse_while(&mut self, t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new("While".to_string());
+
+        let child = self.parse_simple_expr(t);
+        e.add_child(try!(child));
+
+        check_token!(self, TokenType::TDo);
+
+        let child = before_parse!(self, expected_token, TokenType::TBegin => parse_statements);
+        e.add_child( try!(child) );
+
+        Ok(Box::new(e))
+    }
+
+    fn parse_if(&mut self, t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new("If".to_string());
+
+        let child = self.parse_simple_expr(t);
+        e.add_child(try!(child));
+
+        check_token!(self, TokenType::TThen);
+
+        let child = before_parse!(self, expected_token, TokenType::TBegin => parse_statements);
+        e.add_child( try!(child) );
+
+        match before_parse!(self, [TokenType::TElse => parse_stmts]) {
+            Some(res) => e.add_child( try!(res) ),
+            None => { }
+        };
+
+        Ok(Box::new(e))
+    }
+
+    fn parse_stmts(&mut self, _t: &Token) -> NodeResult {
+        before_parse!(self, expected_token, TokenType::TBegin => parse_statements)
     }
 
     fn parse_simple_expr(&mut self, _t: &Token) -> NodeResult {
@@ -200,6 +281,10 @@ impl Parser {
             None => {},
             Some(node) => return Ok(try!(node))
         };
+        self.parse_simple_id(t)
+        
+    }
+    fn parse_simple_id(&mut self, t: &Token) -> NodeResult { 
         Ok(Box::new(IdNode::new(t.value.as_string())))
     }
 
