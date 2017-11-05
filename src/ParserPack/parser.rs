@@ -138,8 +138,12 @@ impl Parser {
     }
 
     fn parse_simple_stmt(&mut self, t: &Token) -> NodeResult {
-        match behind_parse!(self, t, [TokenType::TOp     => parse_func_call,
-                                      TokenType::TAssign => parse_assign]) {
+        match behind_parse!(self, t, [TokenType::TOp          => parse_func_call,
+                                      TokenType::TAssign      => parse_assign,
+                                      TokenType::TPlsAssign   => parse_assign,
+                                      TokenType::TMinAssign   => parse_assign,
+                                      TokenType::TMulAssign   => parse_assign,
+                                      TokenType::TShareAssign => parse_assign]) {
             Some(node) => Ok(try!(node)),
             None => Err(expected_token(t.coords.x, t.coords.y, TokenType::TSemicolom))
         }
