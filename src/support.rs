@@ -16,12 +16,6 @@ pub enum TokenizerErrors {
 
 pub enum ParserErrors {
 	EmptyFile{ x: i32, y: i32 },
-	MissingClosingBracket{ x: i32, y: i32 },
 	MissingOperand{ x: i32, y: i32 },
-    ExpectedId{ x: i32, y: i32 },
-    ExpectedSemicolom{ x: i32, y: i32 },
-    ExpectedColon{ x: i32, y: i32 },
-    ExpectedPoint{ x: i32, y: i32 },
-    ExpectedBegin{ x: i32, y: i32 },
-    ExpectedComma{ x: i32, y: i32 },
+    ExpectedToken{ x: i32, y: i32, token: String },
 }

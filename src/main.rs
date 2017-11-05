@@ -46,29 +46,11 @@ fn procerr_errors(err: CompilerErrors) -> String {
             ParserErrors::EmptyFile{ x, y } => { 
                 format!("Ошибка в ({}, {}): Пустой файл", x, y)
             },
-            ParserErrors::MissingClosingBracket{ x, y } => { 
-                format!("Ошибка в ({}, {}): Ожадался символ ')'", x, y)
-            },
             ParserErrors::MissingOperand{ x, y } => { 
                 format!("Ошибка в ({}, {}): Пропущен операнд", x, y)
             },
-            ParserErrors::ExpectedId{ x, y } => {
-                format!("Ошибка в ({}, {}): Ожидался идентификатор", x, y)
-            },
-            ParserErrors::ExpectedSemicolom{ x, y } => {
-                format!("Ошибка в ({}, {}): Ожадался символ ';'", x, y)
-            },
-            ParserErrors::ExpectedColon{ x, y } => {
-                format!("Ошибка в ({}, {}): Ожадался символ ':'", x, y)
-            },
-            ParserErrors::ExpectedPoint{ x, y } => {
-                format!("Ошибка в ({}, {}): Ожадался символ '.'", x, y)
-            },
-            ParserErrors::ExpectedBegin{ x, y } => {
-                format!("Ошибка в ({}, {}): Ожадался begin", x, y)
-            },
-            ParserErrors::ExpectedComma{ x, y } => {
-                format!("Ошибка в ({}, {}): Ожадался символ ','", x, y)
+            ParserErrors::ExpectedToken{ x, y, token } => {
+                format!("Ошибка в ({}, {}): Ожидалось {}", x, y, token)
             },
         },
     }
@@ -79,8 +61,9 @@ fn main() {
 	let mut parser_mode = false;
 	let mut infile_mode = false;
 	let mut file = "".to_string();
+
 	if env::args().len() == 1 {
-	println!("Приходько Олег. 2017 год.");
+	   println!("Приходько Олег. 2017 год.");
 	}
 
 	for arg in env::args() {

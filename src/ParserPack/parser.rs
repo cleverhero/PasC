@@ -15,14 +15,12 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(tokenizer: Tokenizer) -> Parser {
-        Parser {
-            tokenizer
-        }
+        Parser { tokenizer }
     } 
 
     pub fn parse(&mut self) -> TreeResult {
         try!(self.tokenizer.my_next());
-        Ok(Tree::new( try!(self.parse_expr()) ))
+        Ok(Tree::new( try!(self.parse_program()) ))
     } 
 
     fn parse_program(&mut self) -> NodeResult {
@@ -37,23 +35,25 @@ impl Parser {
     }
 
     fn parse_header(&mut self) -> NodeResult {
-        before_parse!(self, Box::new(IdNode::new("No name".to_string())), [TokenType::TProgram => parse_header_id])
+        match before_parse!(self, [TokenType::TProgram => parse_header_id]) {
+            Some(node) => node,
+            None => Ok(Box::new(IdNode::new("No name".to_string())))
+        }
     }
 
     fn parse_header_id(&mut self, _t: &Token) -> NodeResult {
-        let e = before_parse!(self, expected_semicolom, [TokenType::TId => parse_id]);
-        try!(self.check_semicolon() );
+        let e = before_parse!(self, expected_token, TokenType::TId => parse_id);
+        check_token!(self, TokenType::TSemicolom);
         e
-    }
+    } 
 
     fn parse_block(&mut self) -> NodeResult {
         let mut e = ProgramNode::new("Block".to_string());
         let child = try!( self.parse_declarations() );
         e.add_child(child);
 
-        let child = before_parse!(self, expected_begin, [TokenType::TBegin => parse_statements]);
-        let child = try!( child );
-        e.add_child(child);
+        let child = before_parse!(self, expected_token, TokenType::TBegin => parse_statements);
+        e.add_child( try!(child) );
         
         Ok(Box::new(e))
     }
@@ -64,25 +64,26 @@ impl Parser {
         loop {
             let t = self.tokenizer.current.clone();
             break_if!(t.token_type = [TokenType::TBegin]);
-        
-            let res = before_parse!(self, expected_semicolom, [TokenType::TVar => parse_var_declaration_list]); 
-            e.add_child(try!(res));
+
+            let child = match before_parse!(self, [TokenType::TVar => parse_var_declaration_list]) {
+                Some(res) => try!(res),
+                None => { return Err(expected_token(t.coords.x, t.coords.y, TokenType::TSemicolom)); }
+            };
+            e.add_child(child);
         }
         Ok(Box::new(e))
     }
 
     fn parse_var_declaration_list(&mut self, _t: &Token) -> NodeResult {
         let mut e = ProgramNode::new("var_declaration".to_string());
-
-        let child = before_parse!(self, expected_id, [TokenType::TId => parse_var_declaration]); 
-        e.add_child(try!(child));
-
+        let child = before_parse!(self, expected_token, TokenType::TId => parse_var_declaration);
+        e.add_child( try!(child) );
         loop {
             let t = self.tokenizer.current.clone();
             break_if!(t.token_type = [TokenType::TBegin, TokenType::TVar]);
         
-            let child = before_parse!(self, expected_id, [TokenType::TId => parse_var_declaration]);  
-            e.add_child(try!(child));
+            let child = before_parse!(self, expected_token, TokenType::TId => parse_var_declaration);
+            e.add_child( try!(child) );
         }
 
         Ok(Box::new(e))
@@ -90,36 +91,64 @@ impl Parser {
 
     fn parse_var_declaration(&mut self, t: &Token) -> NodeResult {
         let mut e = ProgramNode::new(t.value.as_string());
-        try!(self.check_colon());
+        check_token!(self, TokenType::TColon);
 
         let child = self.parse_type();  
         e.add_child( try!(child) );
         
-        let child = before_parse!(self, expected_semicolom, [TokenType::TEq => parse_simple_expr,
-                                                             TokenType::TSemicolom => fake]);
-        let child = try!(child);
-        if child.get_value() != "#" { 
-            e.add_child( child ); 
-            try!(self.check_semicolon());
-        }
+        match before_parse!(self, [TokenType::TEq => parse_simple_expr]) {
+            Some(res) => e.add_child( try!(res) ),
+            None => { }
+        };
+
+        check_token!(self, TokenType::TSemicolom);
 
         Ok(Box::new(e))
     }
 
     fn parse_type(&mut self) -> NodeResult {
-        before_parse!(self, expected_id, [TokenType::TId => parse_id])
+        before_parse!(self, expected_token, TokenType::TId => parse_id)
     }
 
     fn parse_statements(&mut self, _t: &Token) -> NodeResult {
-        let e = ProgramNode::new("Statements".to_string());
+        let mut e = ProgramNode::new("Statements".to_string());
 
         loop {
             let t = self.tokenizer.current.clone();
-            break_if!(t.token_type = [TokenType::TEnd]);
-        
+            break_if!(t.token_type = [TokenType::TEnd, TokenType::TEof]);
+            
+            let child = match before_parse!(self, [TokenType::TId  => parse_simple_stmt]) {
+                Some(res) => try!(res),
+                None => { return Err(missing_operand(t.coords.x, t.coords.y)); }
+            };
+
+            check_token!(self, TokenType::TSemicolom);
+            e.add_child( child );
         }
 
+        try!(self.tokenizer.my_next());
+        check_token!(self, TokenType::TPoint);
+
         Ok(Box::new(e))
+    }
+
+    fn parse_simple_stmt(&mut self, t: &Token) -> NodeResult {
+        match behind_parse!(self, t, [TokenType::TOp     => parse_func_call,
+                                      TokenType::TAssign => parse_assign]) {
+            Some(node) => Ok(try!(node)),
+            None => Err(expected_token(t.coords.x, t.coords.y, TokenType::TSemicolom))
+        }
+    }
+
+    fn parse_assign(&mut self, t: &Token) -> NodeResult {
+        let op = self.tokenizer.current.clone();
+        let mut e = ProgramNode::new(op.text.to_string());//Хранить токен
+        e.add_child(Box::new(IdNode::new(t.value.as_string())));
+
+        try!(self.tokenizer.my_next());
+        e.add_child( try!(self.parse_simple_expr(&t)) );
+
+        return Ok(Box::new(e));
     }
 
     fn parse_simple_expr(&mut self, _t: &Token) -> NodeResult {
@@ -137,13 +166,19 @@ impl Parser {
     }
 
     fn parse_factor(&mut self) -> NodeResult {
-        before_parse!(self, missing_operand, [TokenType::TInt    => parse_int,
-                                              TokenType::TDouble => parse_double,
-                                              TokenType::TId     => parse_id,
-                                              TokenType::TOp     => parse_op_in_expr,
-                                              TokenType::TPlus   => parse_unary,
-                                              TokenType::TMinus  => parse_unary,
-                                              TokenType::TNot    => parse_unary])
+        let t = self.tokenizer.current.clone();
+
+        match before_parse!(self, [TokenType::TInt    => parse_int,
+                                   TokenType::TDouble => parse_double,
+                                   TokenType::TId     => parse_id,
+                                   TokenType::TOp     => parse_op_in_expr,
+                                   TokenType::TPlus   => parse_unary,
+                                   TokenType::TMinus  => parse_unary,
+                                   TokenType::TNot    => parse_unary]) {
+
+            Some(res) => Ok( try!(res) ),
+            None => { return Err(missing_operand(t.coords.x, t.coords.y)); }
+        }
     }
 
     fn parse_unary(&mut self, t: &Token) -> NodeResult { 
@@ -158,34 +193,66 @@ impl Parser {
     }
     fn parse_id(&mut self, t: &Token) -> NodeResult { 
         match behind_parse!(self, t, [TokenType::TOp => parse_func_call]) {
-            None => Ok(Box::new(IdNode::new(t.value.as_string()))),
-            Some(node) => node
+            Some(node) => return Ok(try!(node)),
+            None => {}
+        };
+        match behind_parse!(self, t, [TokenType::TObr => parse_array_element]) {
+            None => {},
+            Some(node) => return Ok(try!(node))
+        };
+        Ok(Box::new(IdNode::new(t.value.as_string())))
+    }
+
+    fn parse_array_element(&mut self, _t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new("array".to_string());
+
+        let t = self.tokenizer.after.clone();
+        try!(self.tokenizer.my_next());
+        
+        match t.token_type {
+            TokenType::TCbr => { },
+            _ => { e.add_child( try!( self.parse_simple_expr(&t) )) }
         }
+        
+        check_token!(self, TokenType::TCbr);
+        match behind_parse!(self, t, [TokenType::TObr => parse_array_element]) {
+            None => {},
+            Some(node) => e.add_child(try!(node))
+        };
+
+        Ok(Box::new(e))
     }
 
     fn parse_func_call(&mut self, t: &Token) -> NodeResult {
         let mut e = Box::new(ProgramNode::new(t.value.as_string()));
 
         let t = self.tokenizer.after.clone();
+        
         match t.token_type {
             TokenType::TCp => { try!(self.tokenizer.my_next()); },
             _ => { e.add_child( try!( self.parse_arg_list() )) }
         }
-        
+
         try!(self.tokenizer.my_next());
+        match behind_parse!(self, t, [TokenType::TObr => parse_array_element]) {
+            None => {},
+            Some(node) => e.add_child(try!(node))
+        };
         
         Ok(e)
     }
 
     fn parse_arg_list(&mut self) -> NodeResult {
         let mut e = ProgramNode::new("Arguments list".to_string());
+
+        let child = before_parse!(self, expected_token, TokenType::TOp => parse_simple_expr);
+        e.add_child(try!(child));
         
         loop {
             let t = self.tokenizer.current.clone();
             break_if!(t.token_type = [TokenType::TCp]);
 
-            let child = before_parse!(self, expected_comma, [TokenType::TOp    => parse_simple_expr,
-                                                             TokenType::TComma => parse_simple_expr]);  
+            let child = before_parse!(self, expected_token, TokenType::TComma => parse_simple_expr);
             e.add_child(try!(child));
         }
 
@@ -194,24 +261,8 @@ impl Parser {
 
     fn parse_op_in_expr(&mut self, _t: &Token) -> NodeResult { 
         let e = self.parse_expr();
-        before_parse!(self, missing_closing_bracket, [TokenType::TCp => fake]);
+        check_token!(self, TokenType::TCp);
         return e;
-    }
-
-    fn check_semicolon(&mut self) -> NodeResult {
-        before_parse!(self, expected_semicolom, [TokenType::TSemicolom => fake])
-    }
-
-    fn check_colon(&mut self) -> NodeResult {
-        before_parse!(self, expected_colon, [TokenType::TColon => fake])
-    }
-
-    fn check_comma(&mut self) -> NodeResult {
-        before_parse!(self, expected_comma, [TokenType::TComma => fake])
-    }
-
-    fn fake(&mut self, _t: &Token) -> NodeResult {
-        Ok(Box::new(IdNode::new("#".to_string()))) 
     }
 }
 

@@ -1,41 +1,25 @@
 use support::*;
+use TokenizerPack::support::*;
 
-pub fn missing_closing_bracket( x: i32, y: i32 ) -> CompilerErrors {
-	let err = ParserErrors::MissingClosingBracket{ x, y };
-    CompilerErrors::ParserError{ err }
-}
 pub fn missing_operand( x: i32, y: i32 ) -> CompilerErrors {
 	let err = ParserErrors::MissingOperand{ x, y };
     CompilerErrors::ParserError{ err }
 }
 
-pub fn expected_id( x: i32, y: i32 ) -> CompilerErrors {
-    let err = ParserErrors::ExpectedId{ x, y };
-    CompilerErrors::ParserError{ err }
-}
-
-pub fn expected_semicolom( x: i32, y: i32 ) -> CompilerErrors {
-    let err = ParserErrors::ExpectedSemicolom{ x, y };
-    CompilerErrors::ParserError{ err }
-}
-
-pub fn expected_comma( x: i32, y: i32 ) -> CompilerErrors {
-    let err = ParserErrors::ExpectedComma{ x, y };
-    CompilerErrors::ParserError{ err }
-}
-
-pub fn expected_colon( x: i32, y: i32 ) -> CompilerErrors {
-    let err = ParserErrors::ExpectedColon{ x, y };
-    CompilerErrors::ParserError{ err }
-}
-
-pub fn expected_begin( x: i32, y: i32 ) -> CompilerErrors {
-    let err = ParserErrors::ExpectedBegin{ x, y };
-    CompilerErrors::ParserError{ err }
-}
-
-pub fn expected_point( x: i32, y: i32 ) -> CompilerErrors {
-    let err = ParserErrors::ExpectedPoint{ x, y };
+pub fn expected_token( x: i32, y: i32, token_type: TokenType ) -> CompilerErrors {
+    let token = match token_type {
+        TokenType::TSemicolom => { ";".to_string() },
+        TokenType::TColon     => { ":".to_string() },
+        TokenType::TComma     => { ",".to_string() },
+        TokenType::TCbr       => { "]".to_string() },
+        TokenType::TCp        => { ")".to_string() },
+        TokenType::TPoint     => { ".".to_string() },
+        TokenType::TBegin     => { "begin".to_string() },
+        TokenType::TEnd       => { "end".to_string() },
+        TokenType::TId        => { "идентификатор".to_string() },
+        _                     => { "".to_string() }
+    };
+    let err = ParserErrors::ExpectedToken{ x, y, token };
     CompilerErrors::ParserError{ err }
 }
 
@@ -71,22 +55,22 @@ macro_rules! parse_bin {
 }
 
 macro_rules! before_parse {
-    ($self:ident, $func: ident, [$($var: path => $next_func:ident),*]) => ({
+    ($self:ident, [$($var: path => $next_func:ident),*]) => ({
         let t = $self.tokenizer.current.clone();
-        try!( $self.tokenizer.my_next() );
-
+        
         match t.token_type {
-            $($var => $self.$next_func(&t),)*
-            _ => return Err($func(t.coords.x, t.coords.y))
+            $($var => {
+                try!( $self.tokenizer.my_next() );
+                Some($self.$next_func(&t))
+            },)*
+            _ => None
         }
     });
-    ($self:ident, $default: expr, [$($var: path => $next_func:ident),*]) => ({
+    ($self:ident, $experted_func:ident, $var: path => $next_func:ident) => ({
         let t = $self.tokenizer.current.clone();
-        try!( $self.tokenizer.my_next() );
-
-        match t.token_type {
-            $($var => $self.$next_func(&t),)*
-            _ => return Ok($default)
+        match before_parse!($self, [$var => $next_func]) {
+            Some(res) => res,
+            None => { return Err($experted_func(t.coords.x, t.coords.y, $var)); }
         }
     })
 }
@@ -111,14 +95,13 @@ macro_rules! break_if {
     })
 }
 
-macro_rules! get_err_or_none {
-    ($($part: ident).* $func:pat) => ({
-        match $($part).* {
-            Some(res) => match res {
-                Ok(_token) => {},
-                Err(err) => return Err(CompilerErrors::TokenizerError{err})
-            }
-            None => { }
-        };     
+macro_rules! check_token {
+    ($self:ident, $var: path) => ({
+        let t = $self.tokenizer.current.clone();
+        try!( $self.tokenizer.my_next() );
+        match t.token_type {
+            $var => {},
+            _ => { return Err(expected_token(t.coords.x, t.coords.y, $var)); }
+        }
     })
 }
