@@ -11,11 +11,15 @@ pub fn expected_token( x: i32, y: i32, token_type: TokenType ) -> CompilerErrors
         TokenType::TSemicolom => { ";".to_string() },
         TokenType::TColon     => { ":".to_string() },
         TokenType::TComma     => { ",".to_string() },
+        TokenType::TObr       => { "[".to_string() },
+        TokenType::TOp        => { "(".to_string() },
         TokenType::TCbr       => { "]".to_string() },
         TokenType::TCp        => { ")".to_string() },
         TokenType::TPoint     => { ".".to_string() },
         TokenType::TBegin     => { "begin".to_string() },
         TokenType::TEnd       => { "end".to_string() },
+        TokenType::TThen      => { "then".to_string() },
+        TokenType::TDo        => { "do".to_string() },
         TokenType::TId        => { "идентификатор".to_string() },
         _                     => { "".to_string() }
     };
@@ -25,10 +29,7 @@ pub fn expected_token( x: i32, y: i32, token_type: TokenType ) -> CompilerErrors
 
 macro_rules! parse_bin {
     ($self:ident, $next_func:ident, [$($var: path),*]) => ({
-        let mut e = match $self.$next_func() {
-            Ok(val) => val,
-            Err(err) => return Err(err)
-        };
+        let mut e = try!( $self.$next_func() );
 
         let mut t = $self.tokenizer.current.clone();
 
@@ -37,10 +38,7 @@ macro_rules! parse_bin {
             _ => false
         } {
             try!( $self.tokenizer.my_next() );
-            let right = match $self.$next_func() {
-                Ok(val) => val,
-                Err(err) => return Err(err)
-            };
+            let right = try!( $self.$next_func() );
 
             let old_e = e;
             e = Box::new(BinNode::new(t));
@@ -54,53 +52,51 @@ macro_rules! parse_bin {
     })
 }
 
-macro_rules! before_parse {
-    ($self:ident, [$($var: path => $next_func:ident),*]) => ({
-        let t = $self.tokenizer.current.clone();
-        
-        match t.token_type {
+macro_rules! parse {
+    ($self:ident, $curr_t: expr, [$($var: path => $next_func:block),*]) => ({
+        let curr_t = $curr_t;
+
+        match curr_t.token_type {
             $($var => {
-                try!( $self.tokenizer.my_next() );
-                Some($self.$next_func(&t))
+                Some($next_func)
             },)*
             _ => None
         }
-    });
-    ($self:ident, $experted_func:ident, $var: path => $next_func:ident) => ({
-        let t = $self.tokenizer.current.clone();
-        match before_parse!($self, [$var => $next_func]) {
-            Some(res) => res,
-            None => { return Err($experted_func(t.coords.x, t.coords.y, $var)); }
-        }
     })
 }
-
-macro_rules! behind_parse {
-    ($self:ident, $t: expr, [$($var: path => $next_func:ident),*]) => ({
-        let t = $self.tokenizer.current.clone();
-
-        match t.token_type {
-            $($var => Some($self.$next_func(&$t)),)*
-            _ => {None}
+macro_rules! parse_simple {
+    ($self:ident, $curr_t: expr, [$var: path => $next_func:block], $experted_func:ident) => ({
+        let curr_t = $curr_t;
+        match parse!($self, curr_t, [$var => $next_func]) {
+            Some(res) => res,
+            None => { return Err($experted_func(curr_t.coords.x, curr_t.coords.y, $var)); }
         }
     })
 }
 
 macro_rules! break_if {
-    ($($part: ident).* = [$($var: path),*]) => ({
+    ($($part: ident).* == [$($var: path),*]) => ({
+        if true_if!($($part).* == [$($var),*]) { break }
+    })
+}
+
+macro_rules! true_if {
+    ($($part: ident).* == [$($var: path),*]) => ({
         match $($part).* {
-            $($var)|* => break,
-            _ => {}
+            $($var)|* => true,
+            _ => { false }
         }
     })
 }
 
+
 macro_rules! check_token {
-    ($self:ident, $var: path) => ({
+    ($self:ident, $var: path $(,$opt: path)*) => ({
         let t = $self.tokenizer.current.clone();
         try!( $self.tokenizer.my_next() );
         match t.token_type {
             $var => {},
+            $($opt => {},)*
             _ => { return Err(expected_token(t.coords.x, t.coords.y, $var)); }
         }
     })

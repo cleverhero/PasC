@@ -187,6 +187,13 @@ impl Tokenizer {
 			}
 		}
     }
+
+    pub fn get_and_next(&mut self) -> Result<Token, CompilerErrors> {
+    	let t = self.current.clone();
+    	try!( self.my_next() );
+
+    	Ok(t)
+    }
 }
 
 
