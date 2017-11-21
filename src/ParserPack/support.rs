@@ -64,8 +64,9 @@ macro_rules! parse {
         }
     })
 }
+
 macro_rules! parse_simple {
-    ($self:ident, $curr_t: expr, [$var: path => $next_func:block], $experted_func:ident) => ({
+    ($self:ident, $curr_t: expr, [ $var: path => $next_func:block ], $experted_func:ident) => ({
         let curr_t = $curr_t;
         match parse!($self, curr_t, [$var => $next_func]) {
             Some(res) => res,

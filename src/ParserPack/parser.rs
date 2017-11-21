@@ -246,9 +246,8 @@ impl Parser {
     }
 
     fn parse_type(&mut self) -> NodeResult {
-        let t = self.tokenizer.current.clone();
+        let t = try!( self.tokenizer.get_and_next() );
 
-        try!( self.tokenizer.my_next() );
         match parse!(self, &t, [ TokenType::TIntegerType => { self.parse_id(&t) },
                                  TokenType::TDoubleType  => { self.parse_id(&t) },
                                  TokenType::TCharType    => { self.parse_id(&t) }  ]) {
@@ -264,13 +263,15 @@ impl Parser {
             let t = self.tokenizer.current.clone();
             break_if!(t.token_type == [TokenType::TEnd, TokenType::TEof]);
 
-            try!( self.tokenizer.my_next() );
             let child = match parse!(self, &t, [ TokenType::TId     => { self.parse_simple_stmt(&t) },
                                                  TokenType::TFor    => { self.parse_for(&t) },
                                                  TokenType::TIf     => { self.parse_if(&t) },
                                                  TokenType::TWhile  => { self.parse_while(&t) },
                                                  TokenType::TRepeat => { self.parse_repeat(&t) },
-                                                 TokenType::TBegin  => { self.parse_statements(&t) } ]) {
+                                                 TokenType::TBegin  => { 
+                                                    try!( self.tokenizer.my_next() ); 
+                                                    self.parse_statements(&t) 
+                                                } ]) {
                 Some(res) => try!(res),
                 None => { return Err(missing_operand(t.coords.x, t.coords.y)); }
             };
@@ -285,24 +286,28 @@ impl Parser {
         Ok(Box::new(e))
     }
 
-    fn parse_simple_stmt(&mut self, t: &Token) -> NodeResult {      
-        let curr_t = self.tokenizer.current.clone();  
-        match parse!(self, &curr_t, [ TokenType::TOp          => { self.parse_func_call(&t) },
-                                      TokenType::TAssign      => { self.parse_assign(&t) },
-                                      TokenType::TPlsAssign   => { self.parse_assign(&t) },
-                                      TokenType::TMinAssign   => { self.parse_assign(&t) },
-                                      TokenType::TMulAssign   => { self.parse_assign(&t) },
-                                      TokenType::TShareAssign => { self.parse_assign(&t) } ]) {
+    fn parse_simple_stmt(&mut self, _t: &Token) -> NodeResult {   
+        let curr_t = try!( self.tokenizer.get_and_next() );
+        let targer = try!(self.parse_id(&curr_t)); 
+
+        let curr_t = self.tokenizer.current.clone(); 
+        match parse!(self, &curr_t, [ TokenType::TAssign      => { self.parse_assign(targer) },
+                                      TokenType::TPlsAssign   => { self.parse_assign(targer) },
+                                      TokenType::TMinAssign   => { self.parse_assign(targer) },
+                                      TokenType::TMulAssign   => { self.parse_assign(targer) },
+                                      TokenType::TShareAssign => { self.parse_assign(targer) },
+                                      TokenType::TSemicolom   => { Ok( targer ) }              ]) {
             Some(node) => Ok(try!(node)),
-            None => Err(expected_token(t.coords.x, t.coords.y, TokenType::TSemicolom))
+            None => Err(expected_token(curr_t.coords.x, curr_t.coords.y, TokenType::TSemicolom))
         }
     }
 
-    fn parse_assign(&mut self, t: &Token) -> NodeResult {
+    fn parse_assign(&mut self, target: Box<Node>) -> NodeResult {
         let op = self.tokenizer.current.clone();
         let mut e = ProgramNode::new(op.text.to_string()); //Хранить токен
-        e.add_child(Box::new(IdNode::new(t.value.as_string())));
+        e.add_child(target);
 
+        let t = self.tokenizer.current.clone(); 
         try!(self.tokenizer.my_next());
         e.add_child( try!(self.parse_simple_expr(&t)) );
 
@@ -310,6 +315,7 @@ impl Parser {
     }
 
     fn parse_for(&mut self, _t: &Token) -> NodeResult {
+        try!( self.tokenizer.my_next() );
         let mut e = ProgramNode::new("For".to_string());
 
         let t = try!( self.tokenizer.get_and_next() );
@@ -336,6 +342,7 @@ impl Parser {
     }
 
     fn parse_repeat(&mut self, t: &Token) -> NodeResult {
+        try!( self.tokenizer.my_next() );
         let mut e = ProgramNode::new("Repeat".to_string());
 
         let curr_t = try!( self.tokenizer.get_and_next() );
@@ -352,6 +359,7 @@ impl Parser {
     }
 
     fn parse_while(&mut self, t: &Token) -> NodeResult {
+        try!( self.tokenizer.my_next() );
         let mut e = ProgramNode::new("While".to_string());
 
         let child = self.parse_simple_expr(t);
@@ -367,6 +375,7 @@ impl Parser {
     }
 
     fn parse_if(&mut self, t: &Token) -> NodeResult {
+        try!( self.tokenizer.my_next() );
         let mut e = ProgramNode::new("If".to_string());
 
         let child = self.parse_simple_expr(t);
