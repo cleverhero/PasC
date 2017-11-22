@@ -34,7 +34,7 @@ impl Token {
 		if token_type_str == "id" {
 			for i in KEY_WORDS {
 				if i.to_string() == text.to_lowercase() {
-					token_type_str = text.clone();
+					token_type_str = text.to_lowercase().clone();
                     break;
 				}
 			}
@@ -163,6 +163,7 @@ impl Token {
                 return Err(TokenizerErrors::UnknownCharCode{x, y});
             }
         }
+
 		Ok(Token {
 			token_type:     (*TYPE_BY_STATE.get(&token_type_str).unwrap()).clone(),
 			value:          value,

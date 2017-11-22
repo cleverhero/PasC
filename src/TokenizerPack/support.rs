@@ -44,7 +44,8 @@ pub enum TokenType {
     TRepeat, TSet, TThen, TTo, 
     TType, TUntil, TVar, 
     TWhile, TWith, TIntegerType, 
-    TDoubleType, TCharType
+    TDoubleType, TCharType,
+    TForward
 }
 
 lazy_static! {
@@ -132,10 +133,11 @@ lazy_static! {
         m.insert("var".to_string(),          TokenType::TVar);
         m.insert("while".to_string(),        TokenType::TWhile);
         m.insert("with".to_string(),         TokenType::TWith);
+        m.insert("forward".to_string(),      TokenType::TForward);
 
-        m.insert("integer_type".to_string(),      TokenType::TIntegerType);
-        m.insert("double_type".to_string(),       TokenType::TDoubleType);
-        m.insert("char_type".to_string(),         TokenType::TCharType);
+        m.insert("integer_type".to_string(), TokenType::TIntegerType);
+        m.insert("double_type".to_string(),  TokenType::TDoubleType);
+        m.insert("char_type".to_string(),    TokenType::TCharType);
 
         m
     };
@@ -152,7 +154,8 @@ pub static KEY_WORDS: &'static [&'static str] = &["and", "array", "begin",
                                         "of", "or", "packed", "procedure", 
                                         "program", "record", "repeat", "set", 
                                         "then", "to", "type", "until", "var", 
-                                        "while", "with", "integer", "double", "char"];
+                                        "while", "with", "integer", "double", 
+                                        "char", "forward"];
 
 #[derive(Clone)]
 pub struct Point { pub x: i32, pub y: i32 }

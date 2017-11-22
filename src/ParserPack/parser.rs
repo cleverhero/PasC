@@ -76,14 +76,8 @@ impl Parser {
             try!(self.tokenizer.my_next());
             let child = match parse!(self, &t, [ TokenType::TVar       => { self.parse_var_declaration_list(&t) },
                                                  TokenType::TConst     => { self.parse_const_declaration_list(&t) },
-                                                 TokenType::TFunction  => { 
-                                                    try!(self.tokenizer.my_next());
-                                                    self.parse_function_declaration(&t) 
-                                                },
-                                                 TokenType::TProcedure => { 
-                                                    try!(self.tokenizer.my_next());
-                                                    self.parse_procedure_declaration(&t) 
-                                                } ]) {
+                                                 TokenType::TFunction  => { self.parse_function_declaration(&t) },
+                                                 TokenType::TProcedure => { self.parse_procedure_declaration(&t) } ]) {
                 Some(res) => try!(res),
                 None => { return Err(expected_token(t.coords.x, t.coords.y, TokenType::TSemicolom)); }
             };
@@ -93,10 +87,11 @@ impl Parser {
     }
 
     fn parse_procedure_declaration(&mut self, _t: &Token) -> NodeResult {
-        let mut e = ProgramNode::new("procedure".to_string());
+        let func_name = try!( self.tokenizer.get_and_next() );
+        let mut e = ProgramNode::new(func_name.value.to_string());
 
         let t = self.tokenizer.current.clone();
-        let child = match parse!(self, &t, [ TokenType::TOp        => { 
+        let argument_list = match parse!(self, &t, [ TokenType::TOp        => { 
                                                 try!(self.tokenizer.my_next());
                                                 self.parse_decl_arg_list(&t) 
                                             },
@@ -107,48 +102,67 @@ impl Parser {
             Some(res) => try!(res),
             None => { return Err(expected_token(t.coords.x, t.coords.y, TokenType::TSemicolom)); }
         };
-        e.add_child(child);
-
         check_token!(self, TokenType::TSemicolom);
 
-        let child = try!( self.parse_block() );
-        e.add_child(child);
-
+        let t = self.tokenizer.current.clone();
+        let body = match parse!(self, &t,  [ TokenType::TBegin   => { self.parse_block() },
+                                             TokenType::TForward => { 
+                                                 e = ProgramNode::new("Forward procedure".to_string());
+                                                 self.parse_forward()
+                                             } ]) {
+            Some(res) => try!(res),
+            None => { return Err(expected_token(t.coords.x, t.coords.y, TokenType::TBegin)); }
+        };
         check_token!(self, TokenType::TSemicolom);
+
+        e.add_child( argument_list );
+        e.add_child( body );
         
         Ok(Box::new(e))
     }
 
     fn parse_function_declaration(&mut self, _t: &Token) -> NodeResult {
-        let mut e = ProgramNode::new("function".to_string());
+        let func_name = try!( self.tokenizer.get_and_next() );
+        let mut e = ProgramNode::new(func_name.value.to_string());
 
         let t = self.tokenizer.current.clone();
-        let child = match parse!(self, &t, [ TokenType::TOp    => { 
-                                                try!(self.tokenizer.my_next());
-                                                self.parse_decl_arg_list(&t) 
-                                            },
-                                            TokenType::TColon => { 
-                                                let e = ProgramNode::new("Arguments list".to_string());
-                                                Ok (Box::new(e) as Box<Node> )
-                                            } ]) {
+        let argument_list = match parse!(self, &t, [ TokenType::TOp    => { 
+                                                         try!(self.tokenizer.my_next());
+                                                         self.parse_decl_arg_list(&t) 
+                                                     },
+                                                     TokenType::TColon => { 
+                                                         let e = ProgramNode::new("Arguments list".to_string());
+                                                         Ok (Box::new(e) as Box<Node> )
+                                                     } ]) {
             Some(res) => try!(res),
             None => { return Err(expected_token(t.coords.x, t.coords.y, TokenType::TColon)); }
         };
-        e.add_child(child);
-
         check_token!(self, TokenType::TColon);
 
-        let child = self.parse_type();  
-        e.add_child( try!(child) );
-
+        let out_type = try!( self.parse_type() );  
         check_token!(self, TokenType::TSemicolom);
 
-        let child = try!( self.parse_block() );
-        e.add_child(child);
-
+        let t = self.tokenizer.current.clone();
+        let body = match parse!(self, &t,  [ TokenType::TBegin   => { self.parse_block() },
+                                             TokenType::TForward => { 
+                                                 e = ProgramNode::new("Forward function".to_string());
+                                                 self.parse_forward()
+                                             } ]) {
+            Some(res) => try!(res),
+            None => { return Err(expected_token(t.coords.x, t.coords.y, TokenType::TBegin)); }
+        };
         check_token!(self, TokenType::TSemicolom);
+
+        e.add_child( argument_list );
+        e.add_child( out_type );
+        e.add_child( body );
         
         Ok(Box::new(e))
+    }
+
+    fn parse_forward(&mut self) -> NodeResult {
+        try!(self.tokenizer.my_next());
+        Ok( Box::new(ProgramNode::new("Forward".to_string())) )
     }
 
     fn parse_decl_arg_list(&mut self, _t: &Token) -> NodeResult {
@@ -492,7 +506,7 @@ impl Parser {
             let index = try!( self.parse_simple_expr(&t) );
             e.add_child(index);
         }
-        
+
         check_token!(self, TokenType::TCbr);
 
         Ok(e)
