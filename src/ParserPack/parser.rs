@@ -446,38 +446,56 @@ impl Parser {
     fn parse_id(&mut self, t: &Token) -> NodeResult { 
         let curr_t = self.tokenizer.current.clone();  
         match parse!(self, &curr_t, [ TokenType::TOp  => { self.parse_func_call(t) },
-                                      TokenType::TObr => { self.parse_array_element(t) } ]) {
+                                      TokenType::TObr => { self.parse_array_element(t.value.as_string()) } ]) {
             Some(node) => return Ok(try!(node)),
             None => {}
         };
 
-        self.parse_simple_id(t)
-        
+        self.parse_simple_id(t)      
     }
     fn parse_simple_id(&mut self, t: &Token) -> NodeResult { 
         Ok(Box::new(IdNode::new(t.value.as_string())))
     }
 
-    fn parse_array_element(&mut self, _t: &Token) -> NodeResult {
-        let mut e = ProgramNode::new("array".to_string());
+    fn parse_array_element(&mut self, array_name: String) -> NodeResult {
+        let mut e = ProgramNode::new(array_name);
 
         try!(self.tokenizer.my_next());
         let t = self.tokenizer.current.clone();
         
         match t.token_type {
             TokenType::TCbr => { },
-            _ => { e.add_child( try!( self.parse_simple_expr(&t) )) }
+            _ => { e.add_child( try!( self.parse_index_list() )) }
         }
-        
-        check_token!(self, TokenType::TCbr);
 
         let curr_t = self.tokenizer.current.clone();
-        match parse!(self, &curr_t, [TokenType::TObr => { self.parse_array_element(&t) } ]) {
+        match parse!(self, &curr_t, [TokenType::TObr => { self.parse_array_element("Array element".to_string()) } ]) {
             Some(node) => e.add_child(try!(node)),
             None => {}
         };
 
         Ok(Box::new(e))
+    }
+
+    fn parse_index_list(&mut self) -> NodeResult {
+        let t = self.tokenizer.current.clone();
+        let mut e = Box::new( ProgramNode::new("Index".to_string()) );
+
+        let index = try!( self.parse_simple_expr(&t) );
+        e.add_child(index);
+
+        loop {
+            let t = self.tokenizer.current.clone();
+            break_if!(t.token_type == [TokenType::TCbr]);
+            try!(self.tokenizer.my_next());
+
+            let index = try!( self.parse_simple_expr(&t) );
+            e.add_child(index);
+        }
+        
+        check_token!(self, TokenType::TCbr);
+
+        Ok(e)
     }
 
     fn parse_func_call(&mut self, t: &Token) -> NodeResult {
@@ -491,7 +509,7 @@ impl Parser {
 
         try!(self.tokenizer.my_next());
         let curr_t = self.tokenizer.current.clone();
-        match parse!(self, &curr_t, [TokenType::TObr => { self.parse_array_element(&t) } ]) {
+        match parse!(self, &curr_t, [TokenType::TObr => { self.parse_array_element("Array".to_string()) } ]) {
             Some(node) => e.add_child(try!(node)),
             None => {}
         };
