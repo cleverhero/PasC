@@ -74,8 +74,9 @@ impl Parser {
             let t = self.tokenizer.current.clone();
             break_if!(t.token_type == [TokenType::TBegin]);
             try!(self.tokenizer.my_next());
-            let child = match parse!(self, &t, [ TokenType::TVar       => { self.parse_var_declaration_list(&t) },
+            let child = match parse!(self, &t, [ TokenType::TVar       => { self.parse_var_declaration_list(&t, "var_declaration".to_string()) },
                                                  TokenType::TConst     => { self.parse_const_declaration_list(&t) },
+                                                 TokenType::TType      => { self.parse_type_declaration_list(&t) },
                                                  TokenType::TFunction  => { self.parse_function_declaration(&t) },
                                                  TokenType::TProcedure => { self.parse_procedure_declaration(&t) } ]) {
                 Some(res) => try!(res),
@@ -86,12 +87,47 @@ impl Parser {
         Ok(Box::new(e))
     }
 
+    fn parse_type_declaration_list(&mut self, _t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new("Type declarations".to_string());
+
+        let t = try!( self.tokenizer.get_and_next() );
+        let child = parse_simple!(self, &t, [ TokenType::TId => { self.parse_type_declaration(&t) } ], expected_token);
+        e.add_child( try!(child) );
+
+        check_token!(self, TokenType::TSemicolom);
+
+        loop {
+            let t = self.tokenizer.current.clone();
+            break_if!(t.token_type == [ TokenType::TBegin, TokenType::TType, TokenType::TVar, 
+                                        TokenType::TConst, TokenType::TFunction, TokenType::TProcedure]);
+            try!(self.tokenizer.my_next());
+
+            let child = parse_simple!(self, &t, [ TokenType::TId => { self.parse_type_declaration(&t) } ], expected_token);
+            e.add_child( try!(child) );
+
+            check_token!(self, TokenType::TSemicolom);
+        }
+
+        Ok( Box::new(e) )
+    }
+
+    fn parse_type_declaration(&mut self, t: &Token) -> NodeResult {
+        let mut e = ProgramNode::new(t.value.to_string());
+
+        check_token!(self, TokenType::TEq);
+
+        let child = self.parse_type();
+        e.add_child( try!(child) );
+
+        Ok( Box::new(e) )
+    }
+
     fn parse_procedure_declaration(&mut self, _t: &Token) -> NodeResult {
         let func_name = try!( self.tokenizer.get_and_next() );
         let mut e = ProgramNode::new(func_name.value.to_string());
 
         let t = self.tokenizer.current.clone();
-        let argument_list = match parse!(self, &t, [ TokenType::TOp        => { 
+        let argument_list = match parse!(self, &t, [ TokenType::TOp => { 
                                                 try!(self.tokenizer.my_next());
                                                 self.parse_decl_arg_list(&t) 
                                             },
@@ -196,7 +232,8 @@ impl Parser {
         check_token!(self, TokenType::TSemicolom);
         loop {
             let t = self.tokenizer.current.clone();
-            break_if!(t.token_type == [TokenType::TBegin, TokenType::TVar, TokenType::TConst, TokenType::TFunction, TokenType::TProcedure]);
+            break_if!(t.token_type == [ TokenType::TBegin, TokenType::TType, TokenType::TVar, 
+                                        TokenType::TConst, TokenType::TFunction, TokenType::TProcedure]);
             try!(self.tokenizer.my_next());
 
             let child = parse_simple!(self, &t, [ TokenType::TId => { self.parse_const_declaration(&t) } ], expected_token);
@@ -208,17 +245,22 @@ impl Parser {
         Ok(Box::new(e))
     }
 
-    fn parse_var_declaration_list(&mut self, _t: &Token) -> NodeResult {
-        let mut e = ProgramNode::new("var_declaration".to_string());
+    fn parse_var_declaration_list(&mut self, _t: &Token, node_name: String) -> NodeResult {
+        let mut e = ProgramNode::new(node_name.clone());
 
         let t = try!( self.tokenizer.get_and_next() );
+        println!("{}", t);
         let child = parse_simple!(self, &t, [ TokenType::TId => { self.parse_var_declaration(&t) } ], expected_token);
         e.add_child( try!(child) );
 
         check_token!(self, TokenType::TSemicolom);
         loop {
             let t = self.tokenizer.current.clone();
-            break_if!(t.token_type == [TokenType::TBegin, TokenType::TVar, TokenType::TConst, TokenType::TFunction, TokenType::TProcedure]);
+            break_if!(t.token_type == [ TokenType::TBegin, TokenType::TType, TokenType::TVar, 
+                                        TokenType::TConst, TokenType::TFunction, TokenType::TProcedure]);
+
+            if node_name == "Record" { break_if!(t.token_type == [ TokenType::TEnd]); }
+
             try!(self.tokenizer.my_next());
 
             let child = parse_simple!(self, &t, [ TokenType::TId => { self.parse_var_declaration(&t) } ], expected_token);
@@ -227,6 +269,7 @@ impl Parser {
             check_token!(self, TokenType::TSemicolom);
         }
 
+        println!("{}", e);
         Ok(Box::new(e))
     }
 
@@ -262,12 +305,22 @@ impl Parser {
     fn parse_type(&mut self) -> NodeResult {
         let t = try!( self.tokenizer.get_and_next() );
 
-        match parse!(self, &t, [ TokenType::TIntegerType => { self.parse_id(&t) },
+        match parse!(self, &t, [ TokenType::TId          => { self.parse_id(&t) },
+                                 TokenType::TRecord      => { self.parse_record(&t) },
+                                 TokenType::TIntegerType => { self.parse_id(&t) },
                                  TokenType::TDoubleType  => { self.parse_id(&t) },
                                  TokenType::TCharType    => { self.parse_id(&t) }  ]) {
             Some(res) => Ok(try!(res)),
             None => { Err(missing_operand(t.coords.x, t.coords.y)) }
         }
+    }
+
+    fn parse_record(&mut self, t: &Token) -> NodeResult {
+        let e = try!( self.parse_var_declaration_list(t, "Record".to_string()) );
+
+        check_token!(self, TokenType::TEnd);
+
+        Ok( e )
     }
 
     fn parse_statements(&mut self, _t: &Token) -> NodeResult {
