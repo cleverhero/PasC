@@ -116,7 +116,7 @@ impl Parser {
 
         check_token!(self, TokenType::TEq);
 
-        let child = self.parse_type();
+        let child = self.parse_type(t.value.to_string());
         e.add_child( try!(child) );
 
         Ok( Box::new(e) )
@@ -175,7 +175,7 @@ impl Parser {
         };
         check_token!(self, TokenType::TColon);
 
-        let out_type = try!( self.parse_type() );  
+        let out_type = try!( self.parse_type("None".to_string()) );  
         check_token!(self, TokenType::TSemicolom);
 
         let t = self.tokenizer.current.clone();
@@ -249,7 +249,6 @@ impl Parser {
         let mut e = ProgramNode::new(node_name.clone());
 
         let t = try!( self.tokenizer.get_and_next() );
-        println!("{}", t);
         let child = parse_simple!(self, &t, [ TokenType::TId => { self.parse_var_declaration(&t) } ], expected_token);
         e.add_child( try!(child) );
 
@@ -269,7 +268,6 @@ impl Parser {
             check_token!(self, TokenType::TSemicolom);
         }
 
-        println!("{}", e);
         Ok(Box::new(e))
     }
 
@@ -287,7 +285,7 @@ impl Parser {
         let mut e = ProgramNode::new(t.value.as_string());
         check_token!(self, TokenType::TColon);
 
-        let child = self.parse_type();  
+        let child = self.parse_type("None".to_string());  
         e.add_child( try!(child) );
 
         let t = self.tokenizer.current.clone();
@@ -301,27 +299,90 @@ impl Parser {
 
         Ok(Box::new(e))
     }
-
-    fn parse_type(&mut self) -> NodeResult {
+    //--------------------------------------------------------------------------------------------
+    //--------------------------------ДОДЕЛАТЬ-------ДОДЕЛАТЬ-------------------------------------
+    //--------------------------------------------------------------------------------------------
+    fn parse_type(&mut self, typename: String) -> NodeResult {
         let t = try!( self.tokenizer.get_and_next() );
 
-        match parse!(self, &t, [ TokenType::TId          => { self.parse_id(&t) },
-                                 TokenType::TRecord      => { self.parse_record(&t) },
-                                 TokenType::TIntegerType => { self.parse_id(&t) },
-                                 TokenType::TDoubleType  => { self.parse_id(&t) },
-                                 TokenType::TCharType    => { self.parse_id(&t) }  ]) {
+        match parse!(self, &t, [ TokenType::TId          => { self.parse_id(&t) },             
+                                 TokenType::TRecord      => { self.parse_record(&t) },         
+                                 TokenType::TInt         => { self.parse_range(&t, "int") },   
+                                 TokenType::TChar        => { self.parse_range(&t, "char") },       
+                                 //TokenType::TArray     => { self.parse_array(&t) },  
+                                 TokenType::TOp          => { self.parse_enum(&t, typename) },         
+                                 TokenType::TIntegerType => { self.parse_id(&t) },             
+                                 TokenType::TDoubleType  => { self.parse_id(&t) },              
+                                 TokenType::TCharType    => { self.parse_id(&t) }  ]) {             
             Some(res) => Ok(try!(res)),
             None => { Err(missing_operand(t.coords.x, t.coords.y)) }
         }
     }
 
+    fn parse_enum(&mut self, _t: &Token, name: String) -> NodeResult {
+        let mut e = ProgramNode::new(name);
+        //If name == None -> Error;
+
+        let t = self.tokenizer.current.clone();
+        check_token!(self, TokenType::TId);
+        let child = ProgramNode::new(t.value.as_string());
+        e.add_child( Box::new(child) );
+
+        loop {
+            let t = self.tokenizer.current.clone();
+            break_if!(t.token_type == [TokenType::TCp]);
+            check_token!(self, TokenType::TComma);
+
+            let t = self.tokenizer.current.clone();
+            check_token!(self, TokenType::TId);
+            let child = ProgramNode::new(t.value.as_string());
+            e.add_child( Box::new(child) );
+        }
+        check_token!(self, TokenType::TCp);
+
+        Ok( Box::new(e) )
+    }
+
+    //--------------------------------------------------------------------------------------------
+    //--------------------------------ДОДЕЛАТЬ-------ДОДЕЛАТЬ-------------------------------------
+    //--------------------------------------------------------------------------------------------
+
+    fn parse_range(&mut self, t: &Token, ttype: &str) -> NodeResult {
+        let mut e = ProgramNode::new("Range ".to_string() + ttype.clone());
+
+        let l = Box::new(ConstNode::new(t.value.as_int()));
+        check_token!(self, TokenType::TRange);
+
+        let t = try!( self.tokenizer.get_and_next() );
+        let r = if ttype == "int" { 
+            parse_simple!(self, &t, [ TokenType::TInt => { self.parse_int(&t) } ], expected_token) 
+        }
+        else { 
+            parse_simple!(self, &t, [ TokenType::TChar => { self.parse_char(&t) } ], expected_token) 
+        };
+        
+        let r = try!(r);
+        
+        e.add_child(l);
+        e.add_child(r);
+
+        Ok( Box::new(e) )
+    }
+
     fn parse_record(&mut self, t: &Token) -> NodeResult {
         let e = try!( self.parse_var_declaration_list(t, "Record".to_string()) );
-
         check_token!(self, TokenType::TEnd);
-
         Ok( e )
     }
+
+    // fn parse_array(&mut self, _t: &Token) -> NodeResult {
+    //     let e = ProgramNode::new("Array".to_string());
+    //     check_token!(self, TokenType::TOf);
+
+    //     let l = 
+        
+    //     Ok( Box::new(e) )
+    // }
 
     fn parse_statements(&mut self, _t: &Token) -> NodeResult {
         let mut e = ProgramNode::new("Statements".to_string());
@@ -509,6 +570,9 @@ impl Parser {
     }
     fn parse_int(&mut self, t: &Token) -> NodeResult { 
         Ok(Box::new(ConstNode::new(t.value.as_int()))) 
+    }
+    fn parse_char(&mut self, t: &Token) -> NodeResult { 
+        Ok(Box::new(ConstNode::new(t.value.as_string()))) 
     }
     fn parse_id(&mut self, t: &Token) -> NodeResult { 
         let curr_t = self.tokenizer.current.clone();  
