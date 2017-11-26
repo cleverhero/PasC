@@ -20,6 +20,7 @@ pub fn expected_token( x: i32, y: i32, token_type: TokenType ) -> CompilerErrors
         TokenType::TEnd       => { "end".to_string() },
         TokenType::TThen      => { "then".to_string() },
         TokenType::TDo        => { "do".to_string() },
+        TokenType::TOf        => { "of".to_string() },
         TokenType::TId        => { "идентификатор".to_string() },
         _                     => { "".to_string() }
     };
