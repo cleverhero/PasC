@@ -1,17 +1,16 @@
 use std::fmt;
 use std::fmt::Display;
 use std::rc::Rc;
-use ParserPack::Nodes::support::*;
+use ParserPack::*;
 
+#[derive(Clone)]
 pub struct IdNode {
-	pub value: String
+	pub child: Rc< Node >
 }
 
 impl IdNode {
-	pub fn new(value: String) -> IdNode {
-		IdNode {
-			value: value
-		}
+	pub fn new(child: Rc< Node >) -> IdNode {
+		IdNode { child }
 	}
 }
 
@@ -22,12 +21,14 @@ impl Display for IdNode {
     }
 }
 
-impl Printable for IdNode {
-	fn get_children(&self) -> Vec<Rc<Box<Node>>> { vec![] }
-	fn get_name(&self) -> String { self.value.to_string() }
+impl PrintableNode for IdNode {
+	fn get_children(&self) -> Vec< &PrintableNode > { vec![] }
+	fn get_caption(&self) -> String { self.child.get_caption().to_string() }
 }
+
 impl Node for IdNode {
-	fn get_value(&self) -> String {
-		self.value.clone()
-	}
+	fn get_type(&self) -> Option< Rc< Type > > { self.child.get_type().clone() }
+	fn get_name(&self) -> String { self.child.get_name().clone() }
+	fn get_kind(&self) -> KindIdentifier { self.child.get_kind() }
+	fn as_printable(&self) -> &PrintableNode { self }
 }

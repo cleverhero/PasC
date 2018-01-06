@@ -3,38 +3,35 @@ use std::fmt::Display;
 use std::rc::Rc;
 use ParserPack::Nodes::support::*;
 
-
 #[derive(Clone)]
-pub struct ProgramNode {
+pub struct DeclVarListNode {
 	pub name: String,
-	pub childrens: Vec<Rc< Node >>,
+
+	pub fields: Vec< Rc< Node > >
 }
 
-impl ProgramNode {
-	pub fn new(name: String) -> ProgramNode {
-		ProgramNode {
-			name: name,
-			childrens: vec![]
-		}
+impl DeclVarListNode {
+	pub fn new(name: String, fields: Vec< Rc< Node > >) -> DeclVarListNode {
+		DeclVarListNode{ name, fields}
 	}
 }
 
-impl Display for ProgramNode {
+impl Display for DeclVarListNode {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     	let ans = self.as_str("".to_string(), true);
     	write!(f, "{}", ans)
     }
 }
 
-impl PrintableNode for ProgramNode {
+impl PrintableNode for DeclVarListNode {
 	fn get_children(&self) -> Vec< &PrintableNode > { 
 		let mut ans: Vec< &PrintableNode > = vec![];
-		for child in &self.childrens { ans.push( child.as_printable() ) }
+		for field in &self.fields { ans.push( field.as_printable() ) }
 		ans
 	}
 	fn get_caption(&self) -> String { self.name.to_string() }
 }
-impl Node for ProgramNode {
-	fn add_child(&mut self, new_node: Rc< Node >) { self.childrens.push(new_node); }
+
+impl Node for DeclVarListNode { 
 	fn as_printable(&self) -> &PrintableNode { self }
 }

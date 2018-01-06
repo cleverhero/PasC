@@ -3,12 +3,12 @@ use std::rc::Rc;
 use ParserPack::Nodes::support::*;
 
 pub struct Tree {
-	pub root: Rc<Box<Node>>
+	pub root: Rc<Node>
 }
 
 impl Tree {
-	pub fn new(root: Box<Node>) -> Tree {
-		Tree { root: Rc::new(root) }
+	pub fn new(root: Rc< Node >) -> Tree {
+		Tree { root }
 	}
 }
 

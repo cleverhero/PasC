@@ -5,6 +5,7 @@ extern crate NameByField;
 
 mod TokenizerPack;
 mod ParserPack;
+mod SemanticPack;
 mod support;
 
 use std::env;
@@ -12,7 +13,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use support::*;
 use TokenizerPack::tokenizer::Tokenizer;
-use ParserPack::parser::Parser;
+use ParserPack::*;
 
 fn procerr_errors(err: CompilerErrors) -> String {
     match err {
@@ -43,9 +44,6 @@ fn procerr_errors(err: CompilerErrors) -> String {
             },
         },
         CompilerErrors::ParserError{err} => match err {
-            ParserErrors::EmptyFile{ x, y } => { 
-                format!("Ошибка в ({}, {}): Пустой файл", x, y)
-            },
             ParserErrors::MissingOperand{ x, y } => { 
                 format!("Ошибка в ({}, {}): Пропущен операнд", x, y)
             },
@@ -53,8 +51,52 @@ fn procerr_errors(err: CompilerErrors) -> String {
                 format!("Ошибка в ({}, {}): Ожидалось {}", x, y, token)
             },
         },
+        CompilerErrors::SemanticError{err} => match err {
+            SemanticErrors::CastError{ this, other } => { 
+                format!("Ошибка: Нельзя преобразовать {} в {}", this, other)
+            },
+            SemanticErrors::DuplicateIdentifier{ name } => { 
+                format!("Ошибка: Идентификатор {} уже определен", name)
+            },
+            SemanticErrors::UnknownOverride{ name, sign } => { 
+                format!("Ошибка: Не найдена перегрузка {} для {}", sign, name)
+            },
+            SemanticErrors::NotAFunction{ name } => { 
+                format!("Ошибка: Нельзя вызвать {} как функцию", name)
+            },
+            SemanticErrors::ErrorInForwardDecl{ name, sign } => { 
+                format!("Ошибка: Не найдено определение для {}{} ", name, sign)
+            },
+            SemanticErrors::UnknownIdentifier{ name } => { 
+                format!("Ошибка: Идентификатор {} неизвестен", name)
+            },
+            SemanticErrors::ErrorInUnarOperation { name, op } => { 
+                let msg = match op {
+                    UnarOperation::Plus => { "унарный плюс".to_string() }, 
+                    UnarOperation::Minus => { "унарный минус".to_string() }, 
+                    UnarOperation::Not => { "унарное not".to_string() }
+                };
+                format!("Ошибка: Невозможно применить {} к {}", msg, name)
+            },
+            SemanticErrors::ErrorInBinOperation { left, right, op } => { 
+                let msg = match op {
+                    BinOperation::Plus  => { "сложить".to_string() }, 
+                    BinOperation::Minus => { "отнять".to_string() }, 
+                    BinOperation::Mul   => { "умножить".to_string() },
+                    BinOperation::Share => { "поделить".to_string() }, 
+                    BinOperation::And   => { "применить And".to_string() }, 
+                    BinOperation::Or    => { "применить Or".to_string() },
+                    _ =>  { "сравнить".to_string() },
+                };
+                format!("Ошибка: Невозможно {} {} c {}", msg, left, right)
+            },
+            SemanticErrors::OtherError{ msg } => { 
+                format!("Ошибка: {}", msg)
+            },
+        },
     }
 }
+
 
 fn main() {
 	let mut tokenizer_mode = false;
