@@ -5,53 +5,101 @@ use std::fmt;
 
 #[derive(Clone, name_by_field)]
 pub enum TokenType {
-	TColon,	      TDouble,
-    THex, 	      TMinus,
-	TPlus,        TId,
-	TPoint,       TInt,
-	TSemicolom,   TComma, 
-	TAssign,      TRange,  
-    TMul,         TShare,  
-    TLiteral,     TString,
- 
-    TMinAssign,   TMulAssign,
-    TShareAssign, TPlsAssign,
+    TColon,
+    TDouble,
+    THex,
+    TMinus,
+    TPlus,
+    TId,
+    TPoint,
+    TInt,
+    TSemicolom,
+    TComma,
+    TAssign,
+    TRange,
+    TMul,
+    TShare,
+    TLiteral,
+    TString,
 
-	TOp, 	      TCp,
-	TObr, 	      TCbr,
-      
-	TGe, 	      TLe,
-	TGt, 	      TLt,
-	TEq,          TNe,
- 
-    TExp,         TKeyword,
-      
-    TDog,         TLid,
-    TOctal,       TGrill,
-    TChar,        THexChar,
-    TOctalChar, 
-    TBin,         TBinChar,
+    TMinAssign,
+    TMulAssign,
+    TShareAssign,
+    TPlsAssign,
+
+    TOp,
+    TCp,
+    TObr,
+    TCbr,
+
+    TGe,
+    TLe,
+    TGt,
+    TLt,
+    TEq,
+    TNe,
+
+    TExp,
+    TKeyword,
+
+    TDog,
+    TLid,
+    TOctal,
+    TGrill,
+    TChar,
+    THexChar,
+    TOctalChar,
+    TBin,
+    TBinChar,
     TEof,
-    
-    TAnd, TArray, TBegin, 
-    TCase, TConst, TDiv, 
-    TDo, TDownto, TElse, 
-    TEnd, TFile, TFor, 
-    TFunction, TGoto, TIf, 
-    TIn, TLabel, TMod, TNil, 
-    TNot, TOf, TOr, TPacked, 
-    TProcedure, TProgram, TRecord, 
-    TRepeat, TSet, TThen, TTo, 
-    TType, TUntil, TVar, 
-    TWhile, TWith, TIntegerType, 
-    TDoubleType, TCharType,
-    TForward, TContinue, 
-    TBreak
+
+    TAnd,
+    TArray,
+    TBegin,
+    TCase,
+    TConst,
+    TDiv,
+    TDo,
+    TDownto,
+    TElse,
+    TEnd,
+    TFile,
+    TFor,
+    TFunction,
+    TGoto,
+    TIf,
+    TIn,
+    TLabel,
+    TMod,
+    TNil,
+    TNot,
+    TOf,
+    TOr,
+    TPacked,
+    TProcedure,
+    TProgram,
+    TRecord,
+    TRepeat,
+    TSet,
+    TThen,
+    TTo,
+    TType,
+    TUntil,
+    TVar,
+    TWhile,
+    TWith,
+    TIntegerType,
+    TDoubleType,
+    TCharType,
+    TForward,
+    TContinue,
+    TBreak,
+    TWriteln,
 }
 
 lazy_static! {
     pub static ref TYPE_BY_STATE: HashMap<String, TokenType> = {
-    	let mut m = HashMap::new();
+        let mut m = HashMap::new();
         m.insert("int".to_string(),          TokenType::TInt);
         m.insert("double".to_string(),       TokenType::TDouble);
         m.insert("hex".to_string(),          TokenType::THex);
@@ -74,22 +122,22 @@ lazy_static! {
         m.insert("share".to_string(),        TokenType::TShare);
         m.insert("literal".to_string(),      TokenType::TLiteral);
         m.insert("string".to_string(),       TokenType::TString);
-  
+
         m.insert("op".to_string(),           TokenType::TOp);
         m.insert("cp".to_string(),           TokenType::TCp);
         m.insert("obr".to_string(),          TokenType::TObr);
         m.insert("cbr".to_string(),          TokenType::TCbr);
-  
+
         m.insert("ge".to_string(),           TokenType::TGe);
         m.insert("gt".to_string(),           TokenType::TGt);
         m.insert("eq".to_string(),           TokenType::TEq);
         m.insert("le".to_string(),           TokenType::TLe);
         m.insert("lt".to_string(),           TokenType::TLt);
         m.insert("ne".to_string(),           TokenType::TNe);
-  
+
         m.insert("exp".to_string(),          TokenType::TExp);
         m.insert("key_word".to_string(),     TokenType::TKeyword);
-  
+
         m.insert("octal".to_string(),        TokenType::TOctal);
         m.insert("lid".to_string(),          TokenType::TLid);
         m.insert("dog".to_string(),          TokenType::TDog);
@@ -98,7 +146,7 @@ lazy_static! {
         m.insert("hex_char".to_string(),     TokenType::THexChar);
         m.insert("octal_char".to_string(),   TokenType::TOctalChar);
         m.insert("bin_char".to_string(),     TokenType::TBinChar);
-  
+
         m.insert("and".to_string(),          TokenType::TAnd);
         m.insert("array".to_string(),        TokenType::TArray);
         m.insert("begin".to_string(),        TokenType::TBegin);
@@ -142,53 +190,89 @@ lazy_static! {
 
         m.insert("continue".to_string(),     TokenType::TContinue);
         m.insert("break".to_string(),        TokenType::TBreak);
-   
+
+        m.insert("writeln".to_string(),      TokenType::TWriteln);
+
         m
     };
 }
 
-
-
-
-pub static KEY_WORDS: &'static [&'static str] = &["and", "array", "begin", 
-                                        "case", "const", "div", "do", 
-                                        "downto", "else", "end", "file", 
-                                        "for", "function", "goto", "if", 
-                                        "in", "label", "mod", "nil", "not", 
-                                        "of", "or", "packed", "procedure", 
-                                        "program", "record", "repeat", "set", 
-                                        "then", "to", "type", "until", "var", 
-                                        "while", "with", "integer", "double", 
-                                        "char", "forward", "continue", "break"];
+pub static KEY_WORDS: &'static [&'static str] = &[
+    "and",
+    "array",
+    "begin",
+    "case",
+    "const",
+    "div",
+    "do",
+    "downto",
+    "else",
+    "end",
+    "file",
+    "for",
+    "function",
+    "goto",
+    "if",
+    "in",
+    "label",
+    "mod",
+    "nil",
+    "not",
+    "of",
+    "or",
+    "packed",
+    "procedure",
+    "program",
+    "record",
+    "repeat",
+    "set",
+    "then",
+    "to",
+    "type",
+    "until",
+    "var",
+    "while",
+    "with",
+    "integer",
+    "double",
+    "char",
+    "forward",
+    "continue",
+    "break",
+    "writeln",
+];
 
 #[derive(Clone)]
-pub struct Point { pub x: i32, pub y: i32 }
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
+}
 
 #[derive(Clone)]
 pub enum Value {
-    Int{ v: i64},
-    Double{ v: f64},
-    Str{ v: String}
+    Int { v: i64 },
+    Double { v: f64 },
+    Str { v: String },
 }
 
 impl Value {
     pub fn as_string(&self) -> String {
         match self {
-            &Value::Str{ref v} => v.clone(),
+            &Value::Str { ref v } => v.clone(),
             _ => "".to_string(),
         }
     }
 
     pub fn as_int(&self) -> i64 {
         match *self {
-            Value::Int{v} => v,
+            Value::Int { v } => v,
             _ => 0,
         }
     }
 
     pub fn as_double(&self) -> f64 {
         match *self {
-            Value::Double{v} => v,
+            Value::Double { v } => v,
             _ => 0.0,
         }
     }
@@ -197,10 +281,9 @@ impl Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Value::Int{ref v} => write!(f, "{:<25}", v.clone()),
-            &Value::Double{ref v} => write!(f, "{:<25}", v.clone()),
-            &Value::Str{ref v} => write!(f, "{:<25}", v.clone()),
+            &Value::Int { ref v } => write!(f, "{:<25}", v.clone()),
+            &Value::Double { ref v } => write!(f, "{:<25}", v.clone()),
+            &Value::Str { ref v } => write!(f, "{:<25}", v.clone()),
         }
     }
 }
-

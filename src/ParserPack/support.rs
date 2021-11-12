@@ -1,8 +1,8 @@
 use support::*;
 
-pub fn missing_operand( x: i32, y: i32 ) -> CompilerErrors {
-	let err = ParserErrors::MissingOperand{ x, y };
-    CompilerErrors::ParserError{ err }
+pub fn missing_operand(x: i32, y: i32) -> CompilerErrors {
+    let err = ParserErrors::MissingOperand { x, y };
+    CompilerErrors::ParserError { err }
 }
 
 macro_rules! parse_bin {

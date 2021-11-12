@@ -18,7 +18,8 @@ pub mod repeat_node;
 pub mod for_node;
 pub mod function_call_node;
 pub mod continue_break_node;
-
+pub mod writeln_node;
+pub mod main_node;
 
 pub use self::decl_var_node::*;
 pub use self::decl_const_var_node::*;
@@ -40,12 +41,8 @@ pub use self::repeat_node::*;
 pub use self::for_node::*;
 pub use self::function_call_node::*;
 pub use self::continue_break_node::*;
-
-
+pub use self::writeln_node::*;
+pub use self::main_node::*;
 
 pub mod program_node;
-
-
-
-
 pub use self::program_node::*;
